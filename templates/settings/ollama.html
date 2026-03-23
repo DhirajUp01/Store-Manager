@@ -1,50 +1,55 @@
 {% extends "base.html" %}
-{% block page_title %}Ollama AI Settings{% endblock %}
+{% block page_title %}AI Settings — The Pet Foundry{% endblock %}
 {% block content %}
 <div class="card" style="max-width:640px;">
-    <div class="card-header"><h2>🤖 Ollama AI Configuration</h2></div>
-    <div style="background:#f0fdf4;border:1px solid #86efac;padding:1rem;border-radius:6px;margin-bottom:1.25rem;font-size:.88rem;">
-        <b>Local AI powered by Ollama.</b> Ollama runs entirely on your machine — no data leaves your server.
-        <a href="https://ollama.com" target="_blank" style="color:#16a34a;">Install Ollama →</a>
+    <div class="card-header"><h2>🤖 AI Configuration</h2></div>
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;padding:1rem;border-radius:6px;margin-bottom:1.25rem;font-size:.88rem;">
+        <b>Cloud AI powered by Groq</b> — fast, free, no GPU needed.
+        <a href="https://console.groq.com/keys" target="_blank" style="color:#2563eb;">Get free API key →</a>
     </div>
 
     <form method="POST">
         <div class="form-group">
-            <label>Ollama Base URL</label>
-            <input name="base_url" class="form-control" value="{{ current_url }}" placeholder="http://localhost:11434">
-            <small style="color:var(--muted);font-size:.78rem;margin-top:.2rem;display:block;">The URL where your Ollama server is running.</small>
+            <label>Groq API Key</label>
+            <input name="api_key" class="form-control" value="{{ api_key }}" placeholder="gsk_xxxxxxxxxxxx" type="password">
+            <small style="color:var(--muted);font-size:.78rem;margin-top:.2rem;display:block;">Get free key at <a href="https://console.groq.com/keys" target="_blank">console.groq.com</a> — no credit card needed.</small>
         </div>
         <div class="form-group">
-            <label>Model Name</label>
-            <input name="model" class="form-control" value="{{ current_model }}" placeholder="llama3">
-            <small style="color:var(--muted);font-size:.78rem;margin-top:.2rem;display:block;">E.g. llama3, mistral, codellama, phi3. Must be installed in Ollama.</small>
+            <label>Model</label>
+            <select name="model" class="form-control">
+                <option value="llama-3.3-70b-versatile" {% if model == 'llama-3.3-70b-versatile' %}selected{% endif %}>Llama 3.3 70B (recommended — fastest)</option>
+                <option value="llama-3.1-8b-instant" {% if model == 'llama-3.1-8b-instant' %}selected{% endif %}>Llama 3.1 8B (lightweight, free)</option>
+                <option value="mixtral-8x7b-32768" {% if model == 'mixtral-8x7b-32768' %}selected{% endif %}>Mixtral 8x7B</option>
+                <option value="gemma2-9b-it" {% if model == 'gemma2-9b-it' %}selected{% endif %}>Gemma 2 9B</option>
+            </select>
+            <small style="color:var(--muted);font-size:.78rem;margin-top:.2rem;display:block;">Llama 3.3 70B is fastest on Groq's free tier.</small>
         </div>
-        <button type="submit" class="btn btn-primary">Save Ollama Settings</button>
+        <button type="submit" class="btn btn-primary">Save AI Settings</button>
         <a href="/settings" class="btn btn-gray">Back to Settings</a>
     </form>
 
     <div style="margin-top:1.5rem; padding-top:1.25rem; border-top:1px solid var(--border);">
         <div class="card-header" style="margin-bottom:.75rem;"><h2>Connection Status</h2></div>
         <div style="display:flex;align-items:center;gap:.75rem;">
-            <span style="width:12px;height:12px;border-radius:50%;background:{{ '#16a34a' if ollama_status == 'connected' else '#dc2626' if ollama_status == 'disconnected' else '#d97706' }};display:inline-block;flex-shrink:0;"></span>
+            <span style="width:12px;height:12px;border-radius:50%;background:{{ '#16a34a' if status == 'connected' else '#dc2626' if status == 'disconnected' else '#d97706' }};display:inline-block;flex-shrink:0;"></span>
             <span style="font-weight:600;font-size:.9rem;">
-                {% if ollama_status == 'connected' %}
-                    Connected — Ollama is running and responding
-                {% elif ollama_status == 'disconnected' %}
-                    Disconnected — Ollama is not reachable at <code>{{ current_url }}</code>
+                {% if status == 'connected' %}
+                    Connected — AI is working ✅
+                {% elif status == 'disconnected' %}
+                    Disconnected — add your Groq API key above
                 {% else %}
-                    Status: {{ ollama_status }}
+                    Status: {{ status }}
                 {% endif %}
             </span>
         </div>
-        {% if ollama_status != 'connected' %}
+        {% if status != 'connected' %}
         <div style="margin-top:.75rem;background:#fff7ed;border:1px solid #fed7aa;padding:.85rem;border-radius:6px;font-size:.85rem;">
-            <b>To get started:</b>
+            <b>To enable AI features:</b>
             <ol style="margin:.4rem 0 0 1.2rem;padding-left:0;">
-                <li>Install Ollama from <a href="https://ollama.com" target="_blank">ollama.com</a></li>
-                <li>Run <code style="background:#f1f5f9;padding:.1rem .3rem;border-radius:3px;">ollama pull llama3</code> in your terminal</li>
-                <li>Start Ollama: <code style="background:#f1f5f9;padding:.1rem .3rem;border-radius:3px;">ollama serve</code></li>
-                <li>Refresh this page</li>
+                <li>Go to <a href="https://console.groq.com/keys" target="_blank">console.groq.com</a></li>
+                <li>Sign up (free — no credit card)</li>
+                <li>Create an API key and paste it above</li>
+                <li>Save — AI features will activate instantly</li>
             </ol>
         </div>
         {% endif %}
@@ -58,8 +63,7 @@
             <span style="font-size:1.2rem;">📝</span>
             <div>
                 <b style="font-size:.9rem;">AI Product Descriptions</b>
-                <p style="color:var(--muted);font-size:.82rem;margin:.2rem 0 0;">Auto-generate compelling product descriptions when adding new products.</p>
-                <code style="font-size:.78rem;color:var(--primary);">POST /api/ai/generate-description</code>
+                <p style="color:var(--muted);font-size:.82rem;margin:.2rem 0 0;">Auto-generate compelling product descriptions when adding products.</p>
             </div>
         </div>
         <div style="display:flex;align-items:flex-start;gap:.75rem;padding:.75rem;background:#f8fafc;border-radius:6px;border:1px solid var(--border);">
@@ -67,22 +71,20 @@
             <div>
                 <b style="font-size:.9rem;">AI Stock Report</b>
                 <p style="color:var(--muted);font-size:.82rem;margin:.2rem 0 0;">Get actionable insights on out-of-stock and low-stock items.</p>
-                <code style="font-size:.78rem;color:var(--primary);">GET /api/ai/stock-report</code>
             </div>
         </div>
         <div style="display:flex;align-items:flex-start;gap:.75rem;padding:.75rem;background:#f8fafc;border-radius:6px;border:1px solid var(--border);">
             <span style="font-size:1.2rem;">🔍</span>
             <div>
                 <b style="font-size:.9rem;">AI Smart Search</b>
-                <p style="color:var(--muted);font-size:.82rem;margin:.2rem 0 0;">Natural language product search powered by Ollama.</p>
-                <code style="font-size:.78rem;color:var(--primary);">GET /api/ai/search?q=query</code>
+                <p style="color:var(--muted);font-size:.82rem;margin:.2rem 0 0;">Natural language product search powered by AI.</p>
             </div>
         </div>
         <div style="display:flex;align-items:flex-start;gap:.75rem;padding:.75rem;background:#f8fafc;border-radius:6px;border:1px solid var(--border);">
             <span style="font-size:1.2rem;">💬</span>
             <div>
                 <b style="font-size:.9rem;">AI Dashboard Insight</b>
-                <p style="color:var(--muted);font-size:.82rem;margin:.2rem 0 0;">Quick restocking recommendation shown on the dashboard when stock is low.</p>
+                <p style="color:var(--muted);font-size:.82rem;margin:.2rem 0 0;">Quick restocking recommendation shown on dashboard.</p>
             </div>
         </div>
     </div>

@@ -99,36 +99,47 @@ def log_user_audit(user_id, action, details=None, ip_address=None):
     conn.commit()
     conn.close()
 
-# ─── Ollama AI Setup ─────────────────────────────────────────────────────────
-OLLAMA_BASE_URL = os.environ.get('OLLAMA_BASE_URL', 'http://localhost:11434')
-OLLAMA_MODEL = os.environ.get('OLLAMA_MODEL', 'llama3')
-_ollama_initialized = False
+# ─── Cloud AI Setup (Groq — free, no GPU needed) ─────────────────────────────────
+# Uses Groq's free tier (30 req/min) — no GPU required
+# Get free key at: https://console.groq.com/keys
+GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
+GROQ_MODEL = os.environ.get('GROQ_MODEL', 'llama-3.3-70b-versatile')
 
-def _ensure_ollama():
-    """Lazy init — only connects when actually needed."""
-    global _ollama_initialized
-    _ollama_initialized = True
-
-def ollama_chat(prompt, system_prompt=None, model=None):
-    """Send a chat request to Ollama. Returns text response or None on failure."""
+def ai_chat(prompt, system_prompt=None, model=None):
+    """Send a chat request to Groq. Tries per-user saved key first, then env fallback."""
+    user_key = None
+    user_model = None
+    try:
+        if current_user.is_authenticated:
+            user_key = get_setting('groq_api_key', '', uid())
+            user_model = get_setting('groq_model', '', uid())
+    except:
+        pass
+    api_key = user_key or GROQ_API_KEY
+    if not api_key:
+        return None
     try:
         import urllib.request, json
-        url = f"{OLLAMA_BASE_URL}/api/chat"
+        url = "https://api.groq.com/openai/v1/chat/completions"
         messages = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
         data = json.dumps({
-            "model": model or OLLAMA_MODEL,
+            "model": model or user_model or GROQ_MODEL,
             "messages": messages,
-            "stream": False
+            "temperature": 0.7,
+            "max_tokens": 512,
         }).encode()
-        req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
-        with urllib.request.urlopen(req, timeout=60) as resp:
+        req = urllib.request.Request(url, data=data, headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}"
+        })
+        with urllib.request.urlopen(req, timeout=15) as resp:
             result = json.loads(resp.read().decode())
-            return result.get("message", {}).get("content", "").strip()
+            return result["choices"][0]["message"]["content"].strip()
     except Exception as e:
-        print(f"[Ollama] Error: {e}")
+        print(f"[AI] Groq error: {e}")
         return None
 
 # ─── DB Helpers ────────────────────────────────────────────────────────────────
@@ -1342,7 +1353,7 @@ def dashboard():
         try:
             names = [p['name'] for p in low_stock[:5]]
             prompt = f"These products are low on stock: {', '.join(names)}. Give a one-line actionable recommendation."
-            ai_insight = ollama_chat(prompt)
+            ai_insight = ai_chat(prompt)
         except:
             pass
 
@@ -3085,35 +3096,40 @@ def category_add():
     flash('Category added!', 'success')
     return redirect(url_for('settings'))
 
-@app.route('/settings/ollama', methods=['GET', 'POST'])
+@app.route('/settings/ai', methods=['GET', 'POST'])
 @login_required
-def settings_ollama():
+def settings_ai():
     uid_val = uid()
     if request.method == 'POST':
-        model = request.form.get('model', 'llama3').strip()
-        base_url = request.form.get('base_url', 'http://localhost:11434').strip()
-        update_setting('ollama_model', model, uid_val)
-        update_setting('ollama_base_url', base_url, uid_val)
-        flash('Ollama settings saved!', 'success')
-        return redirect(url_for('settings'))
+        api_key = request.form.get('api_key', '').strip()
+        model = request.form.get('model', 'llama-3.3-70b-versatile').strip()
+        update_setting('groq_api_key', api_key, uid_val)
+        update_setting('groq_model', model, uid_val)
+        flash('AI settings saved!', 'success')
+        return redirect(url_for('settings_ai'))
 
-    current_model = get_setting('ollama_model', 'llama3', uid_val)
-    current_url = get_setting('ollama_base_url', 'http://localhost:11434', uid_val)
+    api_key = get_setting('groq_api_key', '', uid_val)
+    model = get_setting('groq_model', 'llama-3.3-70b-versatile', uid_val)
 
     # Test connection
     status = 'unknown'
-    try:
-        import urllib.request
-        req = urllib.request.Request(f"{current_url}/api/tags")
-        with urllib.request.urlopen(req, timeout=5) as r:
-            status = 'connected' if r.status == 200 else f'error({r.status})'
-    except:
+    if api_key:
+        try:
+            import urllib.request, json
+            req = urllib.request.Request(
+                "https://api.groq.com/openai/v1/models",
+                headers={"Authorization": f"Bearer {api_key}"}
+            )
+            with urllib.request.urlopen(req, timeout=5) as r:
+                status = 'connected' if r.status == 200 else f'error({r.status})'
+        except:
+            status = 'disconnected'
+    else:
         status = 'disconnected'
 
+    masked = '***' + api_key[-4:] if len(api_key) > 8 else 'not set'
     return render_template('settings/ollama.html',
-                           ollama_status=status,
-                           current_model=current_model,
-                           current_url=current_url)
+                           status=status, api_key=masked, model=model)
 
 
 # ── API ───────────────────────────────────────────────────────────────────────
@@ -3123,20 +3139,20 @@ def settings_ollama():
 @app.route('/api/ai/generate-description', methods=['POST'])
 @login_required
 def ai_generate_description():
-    """Use Ollama to generate a product description from name/category."""
+    """Groq AI to generate a product description from name/category."""
     name = request.form.get('name', '')
     category = request.form.get('category', '')
     if not name:
         return jsonify({'error': 'Product name required'}), 400
 
     prompt = f"Write a compelling, concise product description for: {name} (Category: {category}). Keep it under 150 characters, e-commerce friendly."
-    desc = ollama_chat(prompt, system_prompt="You are a helpful e-commerce copywriter.")
+    desc = ai_chat(prompt, system_prompt="You are a helpful e-commerce copywriter.")
     return jsonify({'description': desc or 'Description unavailable.'})
 
 @app.route('/api/ai/stock-report', methods=['GET'])
 @login_required
 def ai_stock_report():
-    """Generate an AI-powered stock insights report."""
+    """Generate an AI-powered stock insights report using Groq."""
     conn = get_db()
     low_stock_q = conn.execute("""
         SELECT p.sku, p.name, p.reorder_point, COALESCE(SUM(i.available_qty), 0) as qty
@@ -3154,14 +3170,14 @@ You are a retail inventory analyst. Based on this data:
 Provide: 1) Top 3 restocking priorities, 2) Quick insights, 3) Suggested actions.
 Keep it concise and actionable.
 """
-    insights = ollama_chat(prompt, system_prompt="You are a retail inventory expert assistant.")
-    return jsonify({'insights': insights or 'AI insights unavailable. Ensure Ollama is running.',
+    insights = ai_chat(prompt, system_prompt="You are a retail inventory expert assistant.")
+    return jsonify({'insights': insights or 'AI insights unavailable. Add your Groq API key in Settings → AI.',
                     'out_of_stock': out_of_stock, 'low_stock': low})
 
 @app.route('/api/ai/search', methods=['GET'])
 @login_required
 def ai_smart_search():
-    """Semantic product search using Ollama."""
+    """Semantic product search using Groq AI."""
     q = request.args.get('q', '').strip()
     if not q or len(q) < 2:
         return jsonify({'results': []})
@@ -3185,7 +3201,7 @@ def ai_smart_search():
 
     try:
         import re
-        raw = ollama_chat(prompt)
+        raw = ai_chat(prompt)
         ids = re.findall(r'\d+', raw or '')
         if ids:
             placeholders = ','.join('?' * len(ids))
