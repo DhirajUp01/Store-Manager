@@ -659,8 +659,8 @@ function initApp() {
 
   // Try to restore session only if API base is confirmed by user
   const savedToken = localStorage.getItem('token');
-  const savedBase = localStorage.getItem('api_base_confirmed');
-  if (savedBase && savedToken) {
+  const savedBaseConfirmed = localStorage.getItem('api_base_confirmed');
+  if (savedBaseConfirmed && savedToken) {
     authToken = savedToken;
     // Quick session check — don't let failed API call show blank screen
     fetch(API_BASE + '/auth/me', {
