@@ -340,7 +340,7 @@ let posCart = [];
 
 function posAdd(sku) {
   const input = document.getElementById('posSkuInput');
-  const code = sku || input.value.trim();
+  let code = sku || input.value.trim();
   if (!code) return;
   const found = allProducts.find(p => p.sku === code || p.barcode === code);
   if (found) {
@@ -530,7 +530,7 @@ function closeBarcodeOverlay() {
 }
 
 async function lookupBarcode() {
-  const code = document.getElementById('barcodeInput').value.trim();
+  let code = document.getElementById('barcodeInput').value.trim();
   closeBarcodeOverlay();
   if (!code) return;
   try {
@@ -548,7 +548,7 @@ document.getElementById('barcodeInput').addEventListener('keydown', e => {
 
 // ─── AI Chat Widget ───────────────────────────────────────────────────────────
 let aiChatOpen = false;
-const AI_BASE = 'http://localhost:11434';
+// AI_BASE already declared above — reuse it
 const AI_MODEL = localStorage.getItem('ollama_model') || 'llama3';
 const aiMessages = [];
 
