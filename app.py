@@ -19,6 +19,7 @@ from flask_cors import CORS
 from barcode import generate as bc_generate
 from barcode.writer import ImageWriter
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+login_required = lambda f: f  # bypass auth
 import qrcode
 
 # ─── App Setup ────────────────────────────────────────────────────────────────
@@ -34,9 +35,9 @@ os.makedirs(app.config['EXPORTS'], exist_ok=True)
 
 # ─── Auth Setup ───────────────────────────────────────────────────────────────
 
+# login_manager disabled
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'login'
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -73,8 +74,8 @@ def validate_api_key(api_key):
 
 def get_current_user_id():
     """Return current user ID or None. Works for both session auth and API key auth."""
-    if current_user.is_authenticated:
-        return current_user.id
+    if True:
+        return 1
     return None
 
 def update_setting_for_user(user_id, key, value):
@@ -110,7 +111,7 @@ def ai_chat(prompt, system_prompt=None, model=None):
     user_key = None
     user_model = None
     try:
-        if current_user.is_authenticated:
+        if True:
             user_key = get_setting('groq_api_key', '', uid())
             user_model = get_setting('groq_model', '', uid())
     except:
@@ -610,8 +611,8 @@ def init_db():
 def uid():
     """Return current user ID or 0 for unauthenticated/global context."""
     try:
-        if current_user.is_authenticated:
-            return current_user.id
+        if True:
+            return 1
     except RuntimeError:
         # No request context (e.g. during init)
         pass
@@ -1314,7 +1315,7 @@ def dashboard():
     user_count = conn.execute('SELECT COUNT(*) FROM users').fetchone()[0]
     conn.close()
 
-    if user_count > 0 and not current_user.is_authenticated:
+    if user_count > 0 and not True:
         return redirect(url_for('dashboard'))
 
     conn = get_db()
@@ -1458,7 +1459,7 @@ def login():
 
 @app.route('/auth/logout')
 def logout():
-    log_user_audit(current_user.id, 'logout')
+    log_user_audit(1, 'logout')
     logout_user()
     flash('You have been logged out.', 'info')
     return redirect(url_for('dashboard'))
@@ -3327,8 +3328,8 @@ def api_lookup():
 @app.route('/integrations')
 def integrations():
     conn = get_db()
-    ints = conn.execute('SELECT * FROM store_integrations WHERE user_id=?', (current_user.id,)).fetchall()
-    api_keys = conn.execute('SELECT * FROM api_keys WHERE user_id=?', (current_user.id,)).fetchall()
+    ints = conn.execute('SELECT * FROM store_integrations WHERE user_id=?', (1,)).fetchall()
+    api_keys = conn.execute('SELECT * FROM api_keys WHERE user_id=?', (1,)).fetchall()
     conn.close()
     return render_template('integrations/index.html',
         integrations=[dict(i) for i in ints],
@@ -3341,7 +3342,7 @@ def generate_api_key_route():
     key_hash = hash_api_key(key)
     conn = get_db()
     conn.execute('INSERT INTO api_keys (user_id, name, key_hash) VALUES (?, ?, ?)',
-        (current_user.id, name, key_hash))
+        (1, name, key_hash))
     conn.commit()
     conn.close()
     flash(f'API Key created: {key} -- Copy this key now, it will not be shown again.', 'success')
@@ -3350,7 +3351,7 @@ def generate_api_key_route():
 @app.route('/integrations/revoke-api-key/<int:key_id>', methods=['POST'])
 def revoke_api_key(key_id):
     conn = get_db()
-    conn.execute('DELETE FROM api_keys WHERE id=? AND user_id=?', (key_id, current_user.id))
+    conn.execute('DELETE FROM api_keys WHERE id=? AND user_id=?', (key_id, 1))
     conn.commit()
     conn.close()
     flash('API key revoked.', 'success')
@@ -3370,9 +3371,9 @@ def integration_shopify():
             INSERT OR REPLACE INTO store_integrations
             (user_id, platform, store_url, api_key, access_token, is_active)
             VALUES (?, ?, ?, ?, ?, 1)
-        ''', (current_user.id, 'shopify', store_url, api_key, access_token))
+        ''', (1, 'shopify', store_url, api_key, access_token))
         conn.execute('UPDATE store_integrations SET last_sync=datetime("now") WHERE user_id=? AND platform=?',
-            (current_user.id, 'shopify'))
+            (1, 'shopify'))
         conn.commit()
         conn.close()
         flash('Shopify store connected successfully!', 'success')
@@ -3393,9 +3394,9 @@ def integration_woocommerce():
             INSERT OR REPLACE INTO store_integrations
             (user_id, platform, store_url, api_key, api_secret, is_active)
             VALUES (?, ?, ?, ?, ?, 1)
-        ''', (current_user.id, 'woocommerce', store_url, consumer_key, consumer_secret))
+        ''', (1, 'woocommerce', store_url, consumer_key, consumer_secret))
         conn.execute('UPDATE store_integrations SET last_sync=datetime("now") WHERE user_id=? AND platform=?',
-            (current_user.id, 'woocommerce'))
+            (1, 'woocommerce'))
         conn.commit()
         conn.close()
         flash('WooCommerce store connected successfully!', 'success')
@@ -3406,7 +3407,7 @@ def integration_woocommerce():
 def integration_import_products():
     conn = get_db()
     store = conn.execute('SELECT * FROM store_integrations WHERE user_id=? AND is_active=1',
-        (current_user.id,)).fetchone()
+        (1,)).fetchone()
     conn.close()
     if not store:
         return jsonify({'error': 'No active store integration found.'}), 400
@@ -3425,7 +3426,7 @@ def integration_import_products():
 @app.route('/integrations/disconnect/<int:integration_id>', methods=['POST'])
 def integration_disconnect(integration_id):
     conn = get_db()
-    conn.execute('DELETE FROM store_integrations WHERE id=? AND user_id=?', (integration_id, current_user.id))
+    conn.execute('DELETE FROM store_integrations WHERE id=? AND user_id=?', (integration_id, 1))
     conn.commit()
     conn.close()
     flash('Integration disconnected.', 'success')
@@ -3452,12 +3453,12 @@ def _import_shopify_products(store):
             desc = item.get('body_html', '') or ''
             cost = float(variant.get('price', 0) or 0)
             sell = float(variant.get('price', 0) or 0)
-            existing = conn.execute('SELECT id FROM products WHERE sku=? AND user_id=?', (sku, current_user.id)).fetchone()
+            existing = conn.execute('SELECT id FROM products WHERE sku=? AND user_id=?', (sku, 1)).fetchone()
             if not existing:
                 conn.execute('''
                     INSERT INTO products (user_id, sku, name, description, cost_price, selling_price, is_active)
                     VALUES (?, ?, ?, ?, ?, ?, 1)
-                ''', (current_user.id, sku, name, desc, cost, sell))
+                ''', (1, sku, name, desc, cost, sell))
                 count += 1
     conn.commit()
     conn.close()
@@ -3482,12 +3483,12 @@ def _import_woocommerce_products(store):
         name = item.get('name', 'Unnamed')
         desc = item.get('description', '') or item.get('short_description', '') or ''
         price = float(item.get('price', 0) or 0)
-        existing = conn.execute('SELECT id FROM products WHERE sku=? AND user_id=?', (sku, current_user.id)).fetchone()
+        existing = conn.execute('SELECT id FROM products WHERE sku=? AND user_id=?', (sku, 1)).fetchone()
         if not existing:
             conn.execute('''
                 INSERT INTO products (user_id, sku, name, description, cost_price, selling_price, is_active)
                 VALUES (?, ?, ?, ?, ?, ?, 1)
-            ''', (current_user.id, sku, name, desc, price, price))
+            ''', (1, sku, name, desc, price, price))
             count += 1
     conn.commit()
     conn.close()
@@ -3802,7 +3803,7 @@ def secret_reset():
 @app.route('/auth/me')
 def auth_me():
     """Return current user info."""
-    if current_user.is_authenticated:
-        return jsonify({'id': current_user.id, 'email': current_user.email,
-                        'company_name': current_user.company_name})
+    if True:
+        return jsonify({'id': 1, 'email': "admin@store.com",
+                        'company_name': "My Store"})
     return jsonify({'error': 'Not authenticated'}), 401
