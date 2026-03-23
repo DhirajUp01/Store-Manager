@@ -650,6 +650,12 @@ function showApp() {
 }
 
 function initApp() {
+  // Skip auth — go straight to app
+  currentUser = {email: 'admin@store.com', company_name: 'My Store'};
+  document.getElementById('authView').style.display = 'none';
+  document.getElementById('appView').style.display = 'block';
+  showView('dashboard');
+  return;
   // Always show auth view first
   document.getElementById('authView').style.display = 'flex';
   document.getElementById('appView').style.display = 'none';

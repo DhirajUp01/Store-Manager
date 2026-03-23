@@ -1315,7 +1315,7 @@ def dashboard():
     conn.close()
 
     if user_count > 0 and not current_user.is_authenticated:
-        return redirect(url_for('login'))
+        return redirect(url_for('dashboard'))
 
     conn = get_db()
     uid_val = uid()
@@ -1454,34 +1454,18 @@ def signup_json():
 
 @app.route('/auth/login', methods=['GET', 'POST'])
 def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
-    if request.method == 'POST':
-        email = request.form['email'].strip().lower()
-        password = request.form['password']
-        conn = get_db()
-        user = conn.execute('SELECT * FROM users WHERE email=? AND is_active=1', (email,)).fetchone()
-        conn.close()
-        if user and verify_password(password, user['password_hash']):
-            login_user(dict(user))
-            log_user_audit(user['id'], 'login')
-            next_page = request.args.get('next')
-            return redirect(next_page if next_page else url_for('dashboard'))
-        flash('Invalid email or password', 'error')
-    return render_template('auth/login.html')
+    return redirect(url_for('dashboard'))
 
 @app.route('/auth/logout')
-@login_required
 def logout():
     log_user_audit(current_user.id, 'logout')
     logout_user()
     flash('You have been logged out.', 'info')
-    return redirect(url_for('login'))
+    return redirect(url_for('dashboard'))
 
 # ── Categories ────────────────────────────────────────────────────────────────
 
 @app.route('/categories')
-@login_required
 def categories():
     conn = get_db()
     rows = conn.execute('SELECT c.*, COUNT(p.id) as product_count FROM categories c LEFT JOIN products p ON p.category_id=c.id GROUP BY c.id ORDER BY c.name').fetchall()
@@ -1502,7 +1486,6 @@ def category_create():
 # ── Products ──────────────────────────────────────────────────────────────────
 
 @app.route('/products')
-@login_required
 def products():
     filters = {
         'sku': request.args.get('sku'),
@@ -1868,7 +1851,6 @@ def api_sku_generate():
 # ── Barcode Hub ───────────────────────────────────────────────────────────────
 
 @app.route('/barcodes')
-@login_required
 def barcode_hub():
     conn = get_db()
     products = conn.execute('''
@@ -1948,7 +1930,6 @@ def print_label(product_id):
 # ── Warehouses ────────────────────────────────────────────────────────────────
 
 @app.route('/warehouses')
-@login_required
 def warehouses():
     conn = get_db()
     warehouses_list = conn.execute('''
@@ -2005,7 +1986,6 @@ def warehouse_view(warehouse_id):
 # ── Suppliers ──────────────────────────────────────────────────────────────────
 
 @app.route('/suppliers')
-@login_required
 def suppliers():
     conn = get_db()
     suppliers_list = conn.execute('''
@@ -2065,7 +2045,6 @@ def supplier_view(supplier_id):
 # ── Purchase Orders ───────────────────────────────────────────────────────────
 
 @app.route('/purchase-orders')
-@login_required
 def purchase_orders():
     conn = get_db()
     pos = conn.execute('''
@@ -2214,7 +2193,6 @@ def po_receive(po_id):
 # ── Sales Orders ──────────────────────────────────────────────────────────────
 
 @app.route('/sales-orders')
-@login_required
 def sales_orders():
     conn = get_db()
     orders = conn.execute('''
@@ -2358,7 +2336,6 @@ def so_fulfill(so_id):
 # ── Invoices ──────────────────────────────────────────────────────────────────
 
 @app.route('/invoices')
-@login_required
 def invoices():
     conn = get_db()
     invoices_list = conn.execute('''
@@ -2533,7 +2510,6 @@ def invoice_record_payment(invoice_id):
 # ── POS ───────────────────────────────────────────────────────────────────────
 
 @app.route('/pos')
-@login_required
 def pos():
     conn = get_db()
     products = conn.execute('''
@@ -2681,7 +2657,6 @@ def pos_checkout(pos_session_id):
 # ── Scan Interface ─────────────────────────────────────────────────────────────
 
 @app.route('/scan', methods=['GET', 'POST'])
-@login_required
 def scan():
     product = None
     error = None
@@ -2795,7 +2770,6 @@ def scan():
 # ── Stock Transfers ───────────────────────────────────────────────────────────
 
 @app.route('/transfers')
-@login_required
 def transfers():
     conn = get_db()
     transfers_list = conn.execute('''
@@ -2854,7 +2828,6 @@ def transfer_add():
 # ── Stock Adjustments ─────────────────────────────────────────────────────────
 
 @app.route('/adjustments')
-@login_required
 def adjustments():
     conn = get_db()
     adj = conn.execute('''
@@ -2913,7 +2886,6 @@ def adjustment_add():
 # ── Cycle Counts ──────────────────────────────────────────────────────────────
 
 @app.route('/cycle-counts')
-@login_required
 def cycle_counts():
     conn = get_db()
     counts = conn.execute('''
@@ -2988,7 +2960,6 @@ def cycle_count_view(count_id):
 # ── Reports ───────────────────────────────────────────────────────────────────
 
 @app.route('/reports')
-@login_required
 def reports():
     return render_template('reports/index.html')
 
@@ -3093,7 +3064,6 @@ def report_sales_summary():
 # ── Settings ──────────────────────────────────────────────────────────────────
 
 @app.route('/settings', methods=['GET', 'POST'])
-@login_required
 def settings():
     if request.method == 'POST':
         for key in ['company_name', 'gs1_prefix', 'currency', 'currency_symbol', 'tax_number', 'address', 'phone', 'email',
@@ -3147,7 +3117,6 @@ def category_add():
     return redirect(url_for('settings'))
 
 @app.route('/settings/ai', methods=['GET', 'POST'])
-@login_required
 def settings_ai():
     uid_val = uid()
     if request.method == 'POST':
@@ -3187,7 +3156,6 @@ def settings_ai():
 # ── AI Routes ────────────────────────────────────────────────────────────────
 
 @app.route('/api/ai/generate-description', methods=['POST'])
-@login_required
 def ai_generate_description():
     """Groq AI to generate a product description from name/category."""
     name = request.form.get('name', '')
@@ -3200,7 +3168,6 @@ def ai_generate_description():
     return jsonify({'description': desc or 'Description unavailable.'})
 
 @app.route('/api/ai/stock-report', methods=['GET'])
-@login_required
 def ai_stock_report():
     """Generate an AI-powered stock insights report using Groq."""
     conn = get_db()
@@ -3225,7 +3192,6 @@ Keep it concise and actionable.
                     'out_of_stock': out_of_stock, 'low_stock': low})
 
 @app.route('/api/ai/search', methods=['GET'])
-@login_required
 def ai_smart_search():
     """Semantic product search using Groq AI."""
     q = request.args.get('q', '').strip()
@@ -3359,7 +3325,6 @@ def api_lookup():
 # ─── Integration Hub ──────────────────────────────────────────────────────────
 
 @app.route('/integrations')
-@login_required
 def integrations():
     conn = get_db()
     ints = conn.execute('SELECT * FROM store_integrations WHERE user_id=?', (current_user.id,)).fetchall()
@@ -3370,7 +3335,6 @@ def integrations():
         api_keys=[dict(k) for k in api_keys])
 
 @app.route('/integrations/generate-api-key', methods=['POST'])
-@login_required
 def generate_api_key_route():
     name = request.form.get('name', 'Default Key').strip()
     key = generate_api_key()
@@ -3384,7 +3348,6 @@ def generate_api_key_route():
     return redirect(url_for('integrations'))
 
 @app.route('/integrations/revoke-api-key/<int:key_id>', methods=['POST'])
-@login_required
 def revoke_api_key(key_id):
     conn = get_db()
     conn.execute('DELETE FROM api_keys WHERE id=? AND user_id=?', (key_id, current_user.id))
@@ -3394,7 +3357,6 @@ def revoke_api_key(key_id):
     return redirect(url_for('integrations'))
 
 @app.route('/integrations/shopify', methods=['GET', 'POST'])
-@login_required
 def integration_shopify():
     if request.method == 'POST':
         store_url = request.form['store_url'].strip().rstrip('/')
@@ -3418,7 +3380,6 @@ def integration_shopify():
     return render_template('integrations/shopify.html')
 
 @app.route('/integrations/woocommerce', methods=['GET', 'POST'])
-@login_required
 def integration_woocommerce():
     if request.method == 'POST':
         store_url = request.form['store_url'].strip().rstrip('/')
@@ -3442,7 +3403,6 @@ def integration_woocommerce():
     return render_template('integrations/woocommerce.html')
 
 @app.route('/integrations/import-products', methods=['POST'])
-@login_required
 def integration_import_products():
     conn = get_db()
     store = conn.execute('SELECT * FROM store_integrations WHERE user_id=? AND is_active=1',
@@ -3463,7 +3423,6 @@ def integration_import_products():
     return jsonify({'success': True, 'imported': count})
 
 @app.route('/integrations/disconnect/<int:integration_id>', methods=['POST'])
-@login_required
 def integration_disconnect(integration_id):
     conn = get_db()
     conn.execute('DELETE FROM store_integrations WHERE id=? AND user_id=?', (integration_id, current_user.id))
