@@ -147,9 +147,22 @@
 
 <script>
 // ─── API Configuration ───────────────────────────────────────────────────────
-// Set this to your self-hosted backend URL ( Railway / Render / VPS )
-// For local dev: http://localhost:5050
-const API_BASE = 'http://localhost:5050';
+// Priority: 1) window.API_BASE_URL (set via Netlify env) 2) localStorage 3) default
+// For Netlify: set VITE_API_BASE_URL in Netlify dashboard → deploy → env vars
+// Or change the default below to your Render/Railway URL
+const _defaultApiBase = 'https://your-backend.onrender.com';  // ← CHANGE THIS after deploy
+const API_BASE = window.API_BASE_URL || localStorage.getItem('api_base') || _defaultApiBase;
+const AI_BASE  = window.AI_BASE_URL    || localStorage.getItem('ai_base')  || 'http://localhost:11434';
+
+// Persist user-configured API URL
+function setApiBase(url) {
+  localStorage.setItem('api_base', url);
+  localStorage.setItem('api_base_confirmed', '1');
+  location.reload();
+}
+function getApiBase() {
+  return localStorage.getItem('api_base') || _defaultApiBase;
+}
 
 // ─── Auth State ──────────────────────────────────────────────────────────────
 let currentUser = null;
