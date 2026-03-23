@@ -201,17 +201,19 @@ async function apiCall(method, path, body) {
 }
 
 async function login(email, password) {
-  const d = await apiCall('POST', '/auth/login', {email, password});
+  const d = await apiCall('POST', '/auth/login/json', {email, password});
+  if (d.error) throw new Error(d.error);
   currentUser = d.user || {email};
-  authToken = d.token || localStorage.getItem('token');
+  authToken = d.token;
   if (d.token) localStorage.setItem('token', d.token);
   return d;
 }
 
 async function signup(email, password, company_name) {
-  const d = await apiCall('POST', '/auth/signup', {email, password, company_name});
+  const d = await apiCall('POST', '/auth/signup/json', {email, password, company_name});
+  if (d.error) throw new Error(d.error);
   currentUser = d.user || {email};
-  authToken = d.token || localStorage.getItem('token');
+  authToken = d.token;
   if (d.token) localStorage.setItem('token', d.token);
   return d;
 }

@@ -1411,6 +1411,42 @@ def signup():
             return redirect(url_for('signup'))
     return render_template('auth/signup.html')
 
+@app.route('/auth/login/json', methods=['POST'])
+def login_json():
+    """JSON login endpoint for static frontend."""
+    data = request.get_json() or {}
+    email = data.get('email', '').strip().lower()
+    password = data.get('password', '')
+    conn = get_db()
+    user = conn.execute('SELECT * FROM users WHERE email=? AND is_active=1', (email,)).fetchone()
+    conn.close()
+    if user and verify_password(password, user['password_hash']):
+        token = secrets.token_hex(32)
+        return jsonify({'token': token, 'user': {'id': user['id'], 'email': user['email'], 'company_name': user['company_name']}})
+    return jsonify({'error': 'Invalid email or password'}), 401
+
+@app.route('/auth/signup/json', methods=['POST'])
+def signup_json():
+    """JSON signup endpoint for static frontend."""
+    data = request.get_json() or {}
+    email = data.get('email', '').strip().lower()
+    password = data.get('password', '')
+    company_name = data.get('company_name', 'My Store').strip()
+    if len(password) < 6:
+        return jsonify({'error': 'Password must be at least 6 characters'}), 400
+    pw_hash = hash_password(password)
+    conn = get_db()
+    try:
+        conn.execute('INSERT INTO users (email, password_hash, company_name) VALUES (?, ?, ?)', (email, pw_hash, company_name))
+        conn.commit()
+        user = conn.execute('SELECT * FROM users WHERE email=?', (email,)).fetchone()
+        conn.close()
+        token = secrets.token_hex(32)
+        return jsonify({'token': token, 'user': {'id': user['id'], 'email': user['email'], 'company_name': user['company_name']}})
+    except Exception:
+        conn.close()
+        return jsonify({'error': 'Email already registered'}), 409
+
 @app.route('/auth/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
