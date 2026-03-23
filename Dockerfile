@@ -25,4 +25,4 @@ ENV FLASK_ENV=production
 ENV PORT=10000
 
 # Initialize DB then start gunicorn on Render's expected port
-CMD ["sh", "-c", "python -c 'from app import init_db; init_db()' && gunicorn --bind 0.0.0.0:${PORT} --workers 2 --timeout 120 app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:10000", "--workers", "2", "--timeout", "120", "app:app"]
