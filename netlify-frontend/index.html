@@ -175,24 +175,26 @@ function getAuthHeaders() {
 }
 
 function showLoading(show=true) {
-  document.getElementById('loadingOverlay').classList.toggle('open', show);
+  const el = document.getElementById('loadingOverlay');
+  if (el) el.classList.toggle('open', show);
 }
 
 // ─── Auth API ────────────────────────────────────────────────────────────────
 async function apiCall(method, path, body) {
-  showLoading();
+  showLoading(true);
+  let result;
   try {
     const r = await fetch(API_BASE + path, {
       method,
       headers: getAuthHeaders(),
       body: body ? JSON.stringify(body) : undefined,
     });
-    const d = await r.json();
+    result = await r.json();
     showLoading(false);
-    if (!r.ok) throw new Error(d.error || d.message || 'Request failed');
-    return d;
+    if (!r.ok) throw new Error(result.error || result.message || 'Request failed');
+    return result;
   } catch(e) {
-    showLoading(false);
+    showLoading(false);  // ALWAYS hide overlay, even on network error
     flash(e.message, 'error');
     throw e;
   }
@@ -601,6 +603,26 @@ function setAuthTab(tab) {
   document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
 }
 
+// ─── API Base URL Config ─────────────────────────────────────────────────────
+function handleApiBaseSave() {
+  const input = document.getElementById('apiBaseInput');
+  const status = document.getElementById('apiBaseStatus');
+  let url = input.value.trim().replace(/\/$/, ''); // remove trailing slash
+  if (!url) { status.textContent = 'Please enter a URL'; status.style.color = 'var(--danger)'; return; }
+  if (!url.startsWith('http')) { url = 'https://' + url; }
+  // Test the URL
+  status.textContent = 'Testing...'; status.style.color = 'var(--muted)';
+  fetch(url + '/auth/me', { method: 'GET', headers: {'Content-Type':'application/json'} })
+    .then(r => { if (r.ok) {
+        setApiBase(url);
+        status.textContent = '✅ Connected! Token saved.'; status.style.color = 'var(--success)';
+      } else {
+        status.textContent = '❌ Auth error — check your backend URL'; status.style.color = 'var(--danger)';
+      }})
+    .catch(() => { status.textContent = '❌ Cannot reach backend — is it deployed?'; status.style.color = 'var(--danger)'; });
+}
+
+// ─── Auth Submit ─────────────────────────────────────────────────────────────
 async function handleAuthSubmit() {
   const email = document.getElementById('authEmail').value.trim();
   const password = document.getElementById('authPassword').value;
@@ -626,23 +648,33 @@ function showApp() {
 }
 
 function initApp() {
-  // Try to restore session
-  const savedToken = localStorage.getItem('token');
+  // Always show auth view first
+  document.getElementById('authView').style.display = 'flex';
+  document.getElementById('appView').style.display = 'none';
+
+  // Pre-fill API URL from saved config
   const savedBase = localStorage.getItem('api_base');
-  if (savedBase) API_BASE = savedBase;
-  if (savedToken) {
+  const apiInput = document.getElementById('apiBaseInput');
+  if (savedBase && apiInput) apiInput.value = savedBase;
+
+  // Try to restore session only if API base is confirmed by user
+  const savedToken = localStorage.getItem('token');
+  const savedBase = localStorage.getItem('api_base_confirmed');
+  if (savedBase && savedToken) {
     authToken = savedToken;
-    // Try to validate token by calling API
-    apiCall('GET', '/auth/me').then(user => {
-      currentUser = user;
-      showApp();
-    }).catch(() => {
-      document.getElementById('authView').style.display = 'flex';
-      document.getElementById('appView').style.display = 'none';
-    });
-  } else {
-    document.getElementById('authView').style.display = 'flex';
-    document.getElementById('appView').style.display = 'none';
+    // Quick session check — don't let failed API call show blank screen
+    fetch(API_BASE + '/auth/me', {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    }).then(r => r.ok ? r.json() : null)
+      .then(user => {
+        if (user) { currentUser = user; showApp(); }
+        // else — stay on auth screen
+      }).catch(() => {
+        // API unreachable or not configured — stay on auth screen
+        document.getElementById('authView').style.display = 'flex';
+        document.getElementById('appView').style.display = 'none';
+      });
   }
 }
 
@@ -673,6 +705,17 @@ document.addEventListener('DOMContentLoaded', () => {
   <div class="auth-box">
     <h1>🏪 The Pet Foundry</h1>
     <p>Inventory Management System</p>
+
+    <!-- API Backend URL Config -->
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:0.85rem;margin-bottom:1.25rem;">
+      <label style="font-size:0.78rem;font-weight:600;color:#1e40af;display:block;margin-bottom:0.4rem;">🔗 Backend API URL</label>
+      <div style="display:flex;gap:0.5rem;">
+        <input type="text" id="apiBaseInput" class="form-control" value="" placeholder="https://your-app.onrender.com" style="flex:1;font-size:0.82rem;">
+        <button class="btn btn-primary btn-sm" onclick="handleApiBaseSave()" style="white-space:nowrap;">Save</button>
+      </div>
+      <p id="apiBaseStatus" style="font-size:0.72rem;margin-top:0.35rem;color:#64748b;"></p>
+    </div>
+
     <div class="auth-tabs">
       <div class="auth-tab active" data-tab="login" onclick="setAuthTab('login')">Sign In</div>
       <div class="auth-tab" data-tab="signup" onclick="setAuthTab('signup')">Sign Up</div>
