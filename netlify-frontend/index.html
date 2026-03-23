@@ -613,11 +613,11 @@ function handleApiBaseSave() {
   // Test the URL
   status.textContent = 'Testing...'; status.style.color = 'var(--muted)';
   fetch(url + '/auth/me', { method: 'GET', headers: {'Content-Type':'application/json'} })
-    .then(r => { if (r.ok) {
+    .then(r => { if (r.ok || r.status === 401) {
         setApiBase(url);
-        status.textContent = '✅ Connected! Token saved.'; status.style.color = 'var(--success)';
+        status.textContent = '✅ Backend connected!'; status.style.color = 'var(--success)';
       } else {
-        status.textContent = '❌ Auth error — check your backend URL'; status.style.color = 'var(--danger)';
+        status.textContent = '❌ Cannot reach backend — is it deployed?'; status.style.color = 'var(--danger)';
       }})
     .catch(() => { status.textContent = '❌ Cannot reach backend — is it deployed?'; status.style.color = 'var(--danger)'; });
 }
