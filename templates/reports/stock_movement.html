@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block page_title %}Stock Movement Report{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header"><h2>↕ Stock Movement</h2>
+        <form method="GET" style="display:flex;gap:0.5rem;align-items:center;">
+            <label style="font-size:0.85rem;">From:</label>
+            <input name="from_date" type="date" class="form-control" value="{{ from_date }}" style="width:140px;">
+            <label style="font-size:0.85rem;">To:</label>
+            <input name="to_date" type="date" class="form-control" value="{{ to_date }}" style="width:140px;">
+            <button class="btn btn-sm btn-primary">Filter</button>
+        </form>
+    </div>
+    {% if rows %}
+    <table>
+        <thead><tr><th>Date</th><th>SKU</th><th>Product</th><th>Type</th><th>Warehouse</th><th>Change</th><th>Balance</th><th>Notes</th></tr></thead>
+        <tbody>
+            {% for r in rows %}
+            <tr>
+                <td style="white-space:nowrap;">{{ r.created_at[:16] }}</td>
+                <td><b>{{ r.sku }}</b></td>
+                <td>{{ r.product_name }}</td>
+                <td><span class="badge badge-gray">{{ r.move_type }}</span></td>
+                <td>{{ r.warehouse_name }}</td>
+                <td style="color:{% if r.qty_change < 0 %}var(--danger){% else %}var(--success){% endif %};font-weight:600;">{% if r.qty_change > 0 %}+{% endif %}{{ r.qty_change }}</td>
+                <td>{{ r.balance_after }}</td>
+                <td style="color:var(--muted);font-size:0.82rem;">{{ r.notes or '—' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state"><p>No movements in this date range</p></div>
+    {% endif %}
+</div>
+{% endblock %}

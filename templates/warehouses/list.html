@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block page_title %}Warehouses{% endblock %}
+{% block page_actions %}<a href="/warehouses/add" class="btn btn-primary">+ Add Warehouse</a>{% endblock %}
+{% block content %}
+<div class="card">
+    <table>
+        <thead><tr><th>Code</th><th>Name</th><th>Contact</th><th>Products</th><th>Total Stock</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>
+            {% for w in warehouses %}
+            <tr>
+                <td><b>{{ w.code }}</b></td>
+                <td>{{ w.name }}</td>
+                <td>{{ w.contact_person or '—' }}</td>
+                <td>{{ w.product_count }}</td>
+                <td>{{ w.total_items|int }}</td>
+                <td><span class="badge {% if w.is_active %}badge-green{% else %}badge-gray{% endif %}">{{ 'Active' if w.is_active else 'Inactive' }}</span></td>
+                <td class="actions">
+                    <a href="/warehouses/{{ w.id }}/view" class="btn btn-sm btn-gray">View</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block page_title %}New Stock Adjustment{% endblock %}
+{% block page_actions %}<a href="/adjustments" class="btn btn-gray">← Back</a>{% endblock %}
+{% block content %}
+<div class="card" style="max-width:700px;">
+    <form method="POST">
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Warehouse *</label>
+                <select name="warehouse_id" class="form-control" required>
+                    {% for w in warehouses %}<option value="{{ w.id }}">{{ w.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Reason *</label>
+                <select name="reason" class="form-control" required>
+                    <option value="Cycle Count">Cycle Count</option>
+                    <option value="Damaged Goods">Damaged Goods</option>
+                    <option value="Theft/Loss">Theft / Loss</option>
+                    <option value="Expiry">Expiry</option>
+                    <option value="Data Entry Error">Data Entry Error</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group"><label>Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
+        <div class="form-group">
+            <label>Products</label>
+            <div style="background:#f8fafc;border:1px solid var(--border);padding:1rem;border-radius:6px;">
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0.5rem;margin-bottom:0.75rem;font-size:0.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;">
+                    <span>Product</span><span>Current Qty</span><span>New Qty</span><span>Change</span>
+                </div>
+                <div id="product-list">
+                    <div class="adj-row" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0.5rem;margin-bottom:0.5rem;align-items:center;">
+                        <select name="product_id" class="form-control" style="font-size:0.85rem;">
+                            <option value="">— Select —</option>
+                            {% for p in products %}<option value="{{ p.id }}">{{ p.sku }} — {{ p.name }}</option>{% endfor %}
+                        </select>
+                        <input name="qty_before" type="number" min="0" class="form-control" placeholder="Before" style="font-size:0.85rem;">
+                        <input name="qty_after" type="number" min="0" class="form-control" placeholder="After" style="font-size:0.85rem;">
+                        <span style="text-align:center;color:var(--muted);font-size:0.85rem;">Auto</span>
+                    </div>
+                </div>
+                <button type="button" onclick="addAdjRow()" class="btn btn-sm btn-gray" style="margin-top:0.5rem;">+ Add Product</button>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Submit Adjustment</button>
+    </form>
+</div>
+<script>
+function addAdjRow() {
+    var row = document.querySelector('.adj-row').cloneNode(true);
+    row.querySelectorAll('input').forEach(i => i.value = '');
+    document.getElementById('product-list').appendChild(row);
+}
+</script>
+{% endblock %}

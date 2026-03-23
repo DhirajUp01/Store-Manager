@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ company_name }} — IMS{% endblock %}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --success: #16a34a;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #1e293b;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --sidebar: #1e293b;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+        .flex { display: flex; }
+        .sidebar { width: 220px; min-height: 100vh; background: var(--sidebar); padding: 0; flex-shrink: 0; position: fixed; top: 0; left: 0; overflow-y: auto; }
+        .sidebar .logo { padding: 1.2rem 1.5rem; color: #f8fafc; font-size: 1rem; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.1); letter-spacing: 0.5px; }
+        .sidebar .logo span { color: #60a5fa; }
+        .sidebar nav { padding: 1rem 0; }
+        .sidebar .section-label { padding: 0.75rem 1.5rem 0.25rem; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.3); }
+        .sidebar a { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 1.5rem; color: #cbd5e1; text-decoration: none; font-size: 0.88rem; transition: all 0.15s; }
+        .sidebar a:hover { background: rgba(255,255,255,0.07); color: #f8fafc; }
+        .sidebar a.active { background: rgba(37,99,235,0.25); color: #60a5fa; border-right: 3px solid #60a5fa; }
+        .sidebar a .icon { width: 18px; text-align: center; font-size: 0.9rem; }
+        .main { margin-left: 220px; min-height: 100vh; }
+        .topbar { background: var(--card); border-bottom: 1px solid var(--border); padding: 0.9rem 1.5rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+        .topbar h1 { font-size: 1.05rem; font-weight: 600; color: var(--text); }
+        .topbar .actions { display: flex; gap: 0.5rem; align-items: center; }
+        .breadcrumb { font-size: 0.8rem; color: var(--muted); }
+        .breadcrumb a { color: var(--muted); text-decoration: none; }
+        .breadcrumb a:hover { color: var(--primary); }
+        .container { padding: 1.5rem; max-width: 1400px; }
+        .card { background: var(--card); border-radius: 8px; border: 1px solid var(--border); padding: 1.25rem; margin-bottom: 1.25rem; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .card-header h2 { font-size: 0.95rem; font-weight: 600; color: var(--text); }
+        .card-header h2::before { content: '> '; color: var(--primary); }
+        .btn { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.45rem 0.9rem; border-radius: 5px; font-size: 0.83rem; text-decoration: none; border: none; cursor: pointer; transition: all 0.15s; font-family: inherit; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: #15803d; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-gray { background: #e2e8f0; color: var(--text); }
+        .btn-gray:hover { background: #cbd5e1; }
+        .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.78rem; }
+        .btn-block { display: block; width: 100%; text-align: center; }
+        .btn.disabled { opacity: 0.5; pointer-events: none; }
+        .flash { padding: 0.7rem 1rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.88rem; }
+        .flash-success { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .flash-error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .flash-warning { background: #fef9c3; color: #713f12; border: 1px solid #fde047; }
+        .flash-info { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+        thead tr { background: #f8fafc; }
+        th { text-align: left; padding: 0.6rem 0.85rem; font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 2px solid var(--border); }
+        td { padding: 0.65rem 0.85rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        tr:hover td { background: #f8fafc; }
+        tr:last-child td { border-bottom: none; }
+        .badge { display: inline-block; padding: 0.2rem 0.55rem; border-radius: 3px; font-size: 0.75rem; font-weight: 500; }
+        .badge-blue { background: #dbeafe; color: #1e40af; }
+        .badge-green { background: #dcfce7; color: #166534; }
+        .badge-yellow { background: #fef9c3; color: #713f12; }
+        .badge-red { background: #fee2e2; color: #991b1b; }
+        .badge-gray { background: #f1f5f9; color: #475569; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+        .form-group { margin-bottom: 0.85rem; }
+        .form-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; font-size: 0.85rem; color: var(--text); }
+        .form-control { width: 100%; padding: 0.5rem 0.7rem; border: 1px solid var(--border); border-radius: 5px; font-size: 0.88rem; font-family: inherit; background: white; color: var(--text); }
+        .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(37,99,235,0.1); }
+        textarea.form-control { resize: vertical; min-height: 70px; }
+        select.form-control { cursor: pointer; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; }
+        .stat-card .num { font-size: 1.6rem; font-weight: 700; color: var(--text); line-height: 1.2; }
+        .stat-card .num.primary { color: var(--primary); }
+        .stat-card .num.success { color: var(--success); }
+        .stat-card .num.warning { color: var(--warning); }
+        .stat-card .num.danger { color: var(--danger); }
+        .stat-card .label { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .empty-state { text-align: center; padding: 3rem 1rem; color: var(--muted); }
+        .empty-state .icon { font-size: 2.5rem; margin-bottom: 0.75rem; opacity: 0.4; }
+        .empty-state p { font-size: 0.9rem; }
+        .actions { display: flex; gap: 0.4rem; align-items: center; }
+        .search-bar { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .search-bar input { flex: 1; min-width: 200px; }
+        .tab-nav { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 1.25rem; }
+        .tab-nav a { padding: 0.6rem 1.2rem; font-size: 0.85rem; color: var(--muted); text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s; }
+        .tab-nav a:hover { color: var(--primary); }
+        .tab-nav a.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .code-display { font-family: 'Courier New', monospace; background: #1e293b; color: #60a5fa; padding: 0.5rem 0.8rem; border-radius: 4px; font-size: 0.9rem; display: inline-block; margin: 0.3rem 0; }
+        .info-row { display: flex; padding: 0.5rem 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+        .info-row .label { width: 160px; color: var(--muted); flex-shrink: 0; }
+        .info-row .value { font-weight: 500; }
+        .alert-banner { background: #fef9c3; border: 1px solid #fde047; border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 1rem; color: #713f12; font-size: 0.88rem; }
+        .alert-banner strong { color: #b45309; }
+        @media print { .sidebar, .topbar, .actions, .btn { display: none !important; } .main { margin-left: 0 !important; } .card { border: none; box-shadow: none; } }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+<div class="flex">
+    <div class="sidebar">
+        <div class="logo"><span>{{ company_name }}</span></div>
+        <nav>
+            <a href="/" class="{% if page == '/' %}active{% endif %}">Dashboard</a>
+            <div class="section-label">Catalog</div>
+            <a href="/products" class="{% if page.startswith('/products') %}active{% endif %}">Products</a>
+            <a href="/categories" class="{% if page == '/categories' %}active{% endif %}">Categories</a>
+            <a href="/barcodes" class="{% if page.startswith('/barcodes') %}active{% endif %}">Barcodes</a>
+            <div class="section-label">Inventory</div>
+            <a href="/warehouses" class="{% if page.startswith('/warehouses') %}active{% endif %}">Warehouses</a>
+            <a href="/transfers" class="{% if page.startswith('/transfers') %}active{% endif %}">Transfers</a>
+            <a href="/adjustments" class="{% if page.startswith('/adjustments') %}active{% endif %}">Adjustments</a>
+            <a href="/cycle-counts" class="{% if page.startswith('/cycle-counts') %}active{% endif %}">Cycle Counts</a>
+            <div class="section-label">Operations</div>
+            <a href="/purchase-orders" class="{% if page.startswith('/purchase-orders') %}active{% endif %}">Purchase Orders</a>
+            <a href="/sales-orders" class="{% if page.startswith('/sales-orders') %}active{% endif %}">Sales Orders</a>
+            <a href="/invoices" class="{% if page.startswith('/invoices') %}active{% endif %}">Invoices</a>
+            <a href="/pos" class="{% if page == '/pos' %}active{% endif %}">POS</a>
+            <a href="/suppliers" class="{% if page.startswith('/suppliers') %}active{% endif %}">Suppliers</a>
+            <a href="/scan" class="{% if page == '/scan' %}active{% endif %}">Scan</a>
+            <div class="section-label">Analytics</div>
+            <a href="/reports" class="{% if page.startswith('/reports') %}active{% endif %}">Reports</a>
+            <div class="section-label">System</div>
+            <a href="/settings/ollama" class="{% if page == '/settings/ollama' %}active{% endif %}">🤖 Ollama AI</a>
+            <a href="/settings" class="{% if page == '/settings' %}active{% endif %}">Settings</a>
+        </nav>
+    </div>
+    <div class="main">
+{% if current_user.is_authenticated %}
+<div style="background:#1e293b;color:#cbd5e1;padding:0.4rem 1.5rem;font-size:0.8rem;display:flex;justify-content:space-between;align-items:center;">
+    <span>{{ current_user.company_name }}</span>
+    <span>
+        <a href="/integrations" style="color:#60a5fa;text-decoration:none;margin-right:1rem;">Integrations</a>
+        <a href="/settings" style="color:#60a5fa;text-decoration:none;margin-right:1rem;">Settings</a>
+        <a href="/auth/logout" style="color:#94a3b8;text-decoration:none;">Logout</a>
+    </span>
+</div>
+{% endif %}
+        <div class="topbar">
+            <div>
+                <div class="breadcrumb">{{ company_name }} / {% block breadcrumb %}Dashboard{% endblock %}</div>
+                <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+            </div>
+            <div class="actions">{% block page_actions %}{% endblock %}</div>
+        </div>
+        <div class="container">
+            {% if low_stock_alert %}
+            <div class="alert-banner">
+                <strong>Low Stock Alert:</strong> {{ low_stock_count }} product(s) are at or below reorder point.
+                <a href="/reports/low-stock" style="color: #b45309; margin-left: 0.5rem;">View Report</a>
+            </div>
+            {% endif %}
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for cat, msg in messages %}
+            <div class="flash flash-{{ cat }}">{{ msg }}</div>
+            {% endfor %}
+            {% endwith %}
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+</div>
+</body>
+</html>

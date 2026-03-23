@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block page_title %}Stock Transfers{% endblock %}
+{% block page_actions %}<a href="/transfers/add" class="btn btn-primary">+ New Transfer</a>{% endblock %}
+{% block content %}
+<div class="card">
+    <table>
+        <thead><tr><th>Transfer #</th><th>From</th><th>To</th><th>Items</th><th>Status</th><th>Sent Date</th></tr></thead>
+        <tbody>
+            {% for t in transfers %}
+            <tr>
+                <td><b>{{ t.transfer_number }}</b></td>
+                <td>{{ t.from_warehouse }}</td>
+                <td>{{ t.to_warehouse }}</td>
+                <td>{{ t.item_count }}</td>
+                <td><span class="badge badge-{% if t.status=='completed' %}green{% elif t.status=='transit' %}yellow{% else %}gray{% endif %}">{{ t.status }}</span></td>
+                <td>{{ t.sent_date or '—' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

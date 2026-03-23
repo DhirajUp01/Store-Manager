@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block page_title %}Stock Adjustments{% endblock %}
+{% block page_actions %}<a href="/adjustments/add" class="btn btn-primary">+ New Adjustment</a>{% endblock %}
+{% block content %}
+<div class="card">
+    <table>
+        <thead><tr><th>Adj Number</th><th>Warehouse</th><th>Reason</th><th>Items</th><th>Status</th><th>Date</th></tr></thead>
+        <tbody>
+            {% for a in adjustments %}
+            <tr>
+                <td><b>{{ a.adjustment_number }}</b></td>
+                <td>{{ a.warehouse_name }}</td>
+                <td>{{ a.reason }}</td>
+                <td>{{ a.item_count }}</td>
+                <td><span class="badge badge-{% if a.status=='approved' %}green{% else %}gray{% endif %}">{{ a.status }}</span></td>
+                <td>{{ a.created_at[:10] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

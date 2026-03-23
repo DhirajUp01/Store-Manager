@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block page_title %}{{ supplier.name }}{% endblock %}
+{% block content %}
+<div class="two-col" style="margin-bottom:1.5rem;">
+    <div class="card">
+        <div class="info-row"><div class="label">Code</div><div class="value">{{ supplier.code or '—' }}</div></div>
+        <div class="info-row"><div class="label">Contact</div><div class="value">{{ supplier.contact_name or '—' }}</div></div>
+        <div class="info-row"><div class="label">Phone</div><div class="value">{{ supplier.phone or '—' }}</div></div>
+        <div class="info-row"><div class="label">Email</div><div class="value">{{ supplier.email or '—' }}</div></div>
+        <div class="info-row"><div class="label">GSTIN</div><div class="value">{{ supplier.gstin or '—' }}</div></div>
+        <div class="info-row"><div class="label">Payment Terms</div><div class="value">{{ supplier.payment_terms or '—' }}</div></div>
+    </div>
+    <div class="card">
+        <div class="card-header"><h2>Purchase History</h2></div>
+        <p style="font-size:0.88rem;color:var(--muted);">POs: <b>{{ purchase_orders|length }}</b></p>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header"><h2>Purchase Orders</h2></div>
+    {% if purchase_orders %}
+    <table>
+        <tr><th>PO Number</th><th>Items</th><th>Total</th><th>Status</th><th>Date</th></tr>
+        {% for po in purchase_orders %}
+        <tr>
+            <td><b>{{ po.po_number }}</b></td>
+            <td>{{ po.item_count }}</td>
+            <td>{{ currency }}{{ "%.2f"|format(po.total_amount) }}</td>
+            <td><span class="badge badge-{% if po.status=='received' %}green{% elif po.status=='draft' %}gray{% else %}yellow{% endif %}">{{ po.status }}</span></td>
+            <td>{{ po.created_at[:10] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <div class="empty-state"><p>No purchase orders with this supplier</p></div>
+    {% endif %}
+</div>
+{% endblock %}

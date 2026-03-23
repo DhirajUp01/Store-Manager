@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block page_title %}Supplier Summary{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header"><h2> Supplier Summary</h2></div>
+    {% if suppliers %}
+    <table>
+        <thead><tr><th>Name</th><th>Code</th><th>GSTIN</th><th>Email</th><th>POs</th><th>Avg Order</th><th>Total Spent</th></tr></thead>
+        <tbody>
+            {% for s in suppliers %}
+            <tr>
+                <td><b>{{ s.name }}</b></td>
+                <td>{{ s.code or '—' }}</td>
+                <td>{{ s.gstin or '—' }}</td>
+                <td>{{ s.email or '—' }}</td>
+                <td>{{ s.po_count }}</td>
+                <td>{{ currency }}{{ "%.0f"|format(s.avg_order or 0) }}</td>
+                <td style="font-weight:600;">{{ currency }}{{ "%.0f"|format(s.total_spent or 0) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state"><p>No suppliers yet</p></div>
+    {% endif %}
+</div>
+{% endblock %}

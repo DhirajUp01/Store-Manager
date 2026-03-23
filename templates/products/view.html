@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block page_title %}{{ product.name }}{% endblock %}
+{% block breadcrumb %}Products / {{ product.sku }}{% endblock %}
+{% block page_actions %}
+<a href="/products/{{ product.id }}/edit" class="btn btn-gray"> Edit</a>
+<a href="/products/{{ product.id }}/barcode-download" class="btn btn-primary"> Download Barcode</a>
+{% endblock %}
+{% block content %}
+<div class="two-col" style="margin-bottom:1.5rem;">
+    <div class="card">
+        <div class="card-header"><h2>Product Details</h2></div>
+        <div class="info-row"><div class="label">SKU</div><div class="value"><b>{{ product.sku }}</b></div></div>
+        <div class="info-row"><div class="label">Name</div><div class="value">{{ product.name }}</div></div>
+        <div class="info-row"><div class="label">Category</div><div class="value">{{ product.category_name or '—' }}</div></div>
+        <div class="info-row"><div class="label">HSN Code</div><div class="value">{{ product.hsn_code or '—' }}</div></div>
+        <div class="info-row"><div class="label">Barcode Format</div><div class="value"><span class="badge badge-blue">{{ product.barcode_format }}</span></div></div>
+        <div class="info-row"><div class="label">Cost Price</div><div class="value">{{ currency }}{{ "%.2f"|format(product.cost_price) }}</div></div>
+        <div class="info-row"><div class="label">Selling Price</div><div class="value">{{ currency }}{{ "%.2f"|format(product.selling_price) }}</div></div>
+        <div class="info-row"><div class="label">MRP</div><div class="value">{{ currency }}{{ "%.2f"|format(product.mrp) }}</div></div>
+        <div class="info-row"><div class="label">Tax Rate</div><div class="value">{{ product.tax_rate }}%</div></div>
+        <div class="info-row"><div class="label">Reorder Point</div><div class="value">{{ product.reorder_point }}</div></div>
+        <div class="info-row"><div class="label">Created</div><div class="value">{{ product.created_at[:10] }}</div></div>
+        {% if product.description %}
+        <div class="info-row" style="flex-direction:column;align-items:flex-start;gap:0.25rem;">
+            <div class="label">Description</div>
+            <div class="value" style="color:var(--muted);font-size:0.85rem;">{{ product.description }}</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h2> Barcodes</h2></div>
+        {% for b in barcodes %}
+        <div style="padding:0.75rem;border:1px solid var(--border);border-radius:6px;margin-bottom:0.75rem;">
+            <div><span class="badge badge-blue">{{ b.barcode_format }}</span> {% if b.is_primary %}<span class="badge badge-green">Primary</span>{% endif %}</div>
+            <div class="code-display" style="margin-top:0.5rem;font-size:0.82rem;">{{ b.barcode }}</div>
+            <a href="/barcodes/generate/{{ product.id }}?format={{ b.barcode_format }}" class="btn btn-sm btn-gray" style="margin-top:0.5rem;"> Generate</a>
+        </div>
+        {% endfor %}
+        <a href="/barcodes/generate/{{ product.id }}" class="btn btn-primary btn-block" style="margin-top:0.5rem;">+ Generate New Barcode</a>
+    </div>
+</div>
+
+<div class="two-col">
+    <div class="card">
+        <div class="card-header"><h2> Stock by Warehouse</h2></div>
+        {% if inventory %}
+        <table>
+            <tr><th>Warehouse</th><th>Available</th><th>Reserved</th><th>Reorder Point</th></tr>
+            {% for i in inventory %}
+            <tr>
+                <td><b>{{ i.warehouse_name }}</b></td>
+                <td><span class="badge {% if i.available_qty|int <= i.reorder_point|int %}badge-red{% else %}badge-green{% endif %}">{{ i.available_qty|int }}</span></td>
+                <td>{{ i.reserved_qty|int }}</td>
+                <td>{{ i.reorder_point }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <div class="empty-state"><p>No stock records</p></div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h2> Serial Numbers</h2></div>
+        {% if serials %}
+        <table>
+            <tr><th>Serial Number</th><th>Batch</th><th>Status</th><th>Created</th></tr>
+            {% for s in serials %}
+            <tr>
+                <td><code>{{ s.serial_number }}</code></td>
+                <td>{{ s.batch_number or '—' }}</td>
+                <td><span class="badge {% if s.status=='available' %}badge-green{% else %}badge-gray{% endif %}">{{ s.status }}</span></td>
+                <td>{{ s.created_at[:10] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <div class="empty-state"><p>No serial numbers registered</p></div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h2> Stock Movement History</h2></div>
+    {% if moves %}
+    <table>
+        <tr><th>Date</th><th>Type</th><th>Warehouse</th><th>Qty Change</th><th>Balance</th><th>Ref</th><th>Notes</th></tr>
+        {% for m in moves %}
+        <tr>
+            <td>{{ m.created_at[:16] }}</td>
+            <td><span class="badge badge-gray">{{ m.move_type }}</span></td>
+            <td>{{ m.warehouse_name }}</td>
+            <td style="color:{% if m.qty_change < 0 %}var(--danger){% else %}var(--success){% endif %}">{% if m.qty_change > 0 %}+{% endif %}{{ m.qty_change }}</td>
+            <td>{{ m.balance_after }}</td>
+            <td>{{ m.ref_type or '—' }}</td>
+            <td style="color:var(--muted);font-size:0.82rem;">{{ m.notes or '—' }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <div class="empty-state"><p>No movements recorded</p></div>
+    {% endif %}
+</div>
+{% endblock %}

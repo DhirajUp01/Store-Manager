@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block page_title %}Connect Shopify — Store Manager{% endblock %}
+{% block breadcrumb %}Integrations / Shopify{% endblock %}
+{% block page_actions %}<a href="/integrations" class="btn btn-gray">Back</a>{% endblock %}
+{% block content %}
+<style>
+.connect-card { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 2rem; max-width: 600px; }
+.shopify-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.shopify-header h2 { font-size: 1.2rem; }
+.shopify-header .badge { background: #96bf48; color: white; padding: 0.3rem 0.8rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
+.info-box { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 1rem; font-size: 0.85rem; color: var(--muted); margin-bottom: 1.5rem; }
+.info-box strong { color: var(--text); }
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; font-weight: 500; font-size: 0.88rem; margin-bottom: 0.35rem; }
+.form-group input { width: 100%; padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; font-family: inherit; }
+.form-group input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+.step { display: flex; gap: 0.75rem; margin-bottom: 1rem; font-size: 0.85rem; }
+.step-num { background: var(--primary); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; }
+.step-text { padding-top: 1px; }
+</style>
+
+<div class="connect-card">
+    <div class="shopify-header">
+        <h2>Connect Shopify Store</h2>
+        <span class="badge">Shopify</span>
+    </div>
+
+    <div class="info-box">
+        <strong>How to get your credentials:</strong><br>
+        <div class="step"><span class="step-num">1</span><span class="step-text">Go to your Shopify Admin > Settings > Apps and sales channels > Develop apps</span></div>
+        <div class="step"><span class="step-num">2</span><span class="step-text">Create a new app, set access scopes to: <code>read_products</code>, <code>write_products</code>, <code>read_inventory</code>, <code>write_inventory</code></span></div>
+        <div class="step"><span class="step-num">3</span><span class="step-text">Install the app to your store, then go to API credentials > Install API secret</span></div>
+        <div class="step"><span class="step-num">4</span><span class="step-text">Copy your Store URL, API Key, and Access Token below</span></div>
+    </div>
+
+    <form method="POST">
+        <div class="form-group">
+            <label>Store URL</label>
+            <input name="store_url" type="url" placeholder="https://your-store.myshopify.com" required>
+        </div>
+        <div class="form-group">
+            <label>API Key (Client ID)</label>
+            <input name="api_key" type="text" placeholder="shad....." required>
+        </div>
+        <div class="form-group">
+            <label>Access Token</label>
+            <input name="access_token" type="password" placeholder="shpat_...." required>
+        </div>
+        <div style="display:flex; gap:0.75rem; margin-top:1.5rem;">
+            <button type="submit" class="btn btn-primary" style="flex:1;">Connect Store</button>
+            <a href="/integrations" class="btn btn-gray">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

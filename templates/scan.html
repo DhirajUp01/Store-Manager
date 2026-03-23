@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block page_title %}Scan — Universal Scanner{% endblock %}
+{% block breadcrumb %}Scan{% endblock %}
+{% block content %}
+<style>
+.scan-hero { background: linear-gradient(135deg, #1e293b, #1d4ed8); border-radius: 12px; padding: 2.5rem; text-align: center; color: white; margin-bottom: 1.5rem; }
+.scan-hero h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+.scan-hero p { color: rgba(255,255,255,0.7); font-size: 0.9rem; }
+.scan-card { border: 2px solid var(--border); border-radius: 12px; padding: 1.75rem; margin-bottom: 1.5rem; }
+.scanner-input { width: 100%; padding: 1rem; border: 2px solid var(--border); border-radius: 8px; font-size: 1.1rem; font-family: monospace; background: #f8fafc; text-align: center; }
+.scanner-input:focus { outline: none; border-color: var(--primary); }
+.action-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0.75rem; margin-top: 1rem; }
+.action-btn { padding: 1.1rem; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 700; color: white; transition: opacity 0.15s; text-transform: uppercase; letter-spacing: 0.5px; }
+.action-btn:hover { opacity: 0.85; }
+.action-btn .sublabel { font-size: 0.68rem; opacity: 0.75; display: block; font-weight: 400; margin-top: 4px; text-transform: none; letter-spacing: 0; }
+.action-btn.buy { background: #7c3aed; }
+.action-btn.sell { background: #dc2626; }
+.action-btn.restock { background: #16a34a; }
+.action-btn.adjust { background: #1e293b; }
+.result-card { background: white; border: 2px solid #16a34a; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+.result-card .product-sku { font-size: 0.85rem; color: var(--muted); margin-bottom: 0.25rem; }
+.result-card .product-name { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.5rem; }
+.result-card .product-meta { display: flex; gap: 1.5rem; font-size: 0.88rem; color: var(--muted); }
+.result-card .product-stock { font-size: 1.1rem; font-weight: 700; }
+.result-card .product-stock.low { color: var(--danger); }
+.result-card .product-stock.ok { color: var(--success); }
+.qty-row { display: flex; gap: 0.75rem; align-items: flex-end; }
+.qty-row .form-group { flex: 1; margin-bottom: 0; }
+</style>
+
+<div class="scan-hero">
+    <h1>Universal Barcode Scanner</h1>
+    <p>Scan any barcode or type a SKU / GS1 code to manage inventory</p>
+</div>
+
+{% if error %}
+<div class="flash flash-error">{{ error }}</div>
+{% endif %}
+
+{% if action_result %}
+<div class="result-card">
+    <div class="product-sku">SKU: {{ action_result.product.sku }}</div>
+    <div class="product-name">{{ action_result.product.name }}</div>
+    <div class="product-meta">
+        <span>Selling: {{ currency }}{{ "%.2f"|format(action_result.product.selling_price) }}</span>
+        <span>Cost: {{ currency }}{{ "%.2f"|format(action_result.product.cost_price) }}</span>
+    </div>
+    <div style="margin-top: 1rem; padding: 0.75rem; background: #dcfce7; border-radius: 6px; color: #166534; font-weight: 600;">
+        {% if action_result.type == 'buy' %}
+        Purchase Order <a href="/purchase-orders/{{ action_result.po_id }}/edit">{{ action_result.po_number }}</a> created — {{ action_result.qty }} units added
+        {% elif action_result.type == 'sell' %}
+        Sales Order updated — {{ action_result.qty }} units added
+        {% elif action_result.type == 'restock' %}
+        Restocked: +{{ action_result.qty }} units
+        {% elif action_result.type == 'adjustment' %}
+        Adjusted: {{ action_result.qty_before }} -> {{ action_result.qty_after }} ({% if action_result.change >= 0 %}+{% endif %}{{ action_result.change }})
+        {% endif %}
+    </div>
+    <div style="margin-top: 1rem;">
+        <a href="/scan" class="btn btn-primary">Scan Another</a>
+    </div>
+</div>
+{% endif %}
+
+<form method="POST" id="scanForm">
+<div class="scan-card">
+    <input name="identifier" id="identifier" class="scanner-input"
+        placeholder="Scan barcode or type SKU / GS1 code..."
+        autocomplete="off" autofocus required>
+
+    <div class="form-grid" style="margin-top:1rem;">
+        <div class="form-group">
+            <label>Quantity</label>
+            <input name="qty" type="number" value="1" min="1" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label>Warehouse</label>
+            <select name="warehouse_id" class="form-control">
+                {% for w in warehouses %}<option value="{{ w.id }}">{{ w.name }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Notes</label>
+            <input name="notes" class="form-control" placeholder="Optional note...">
+        </div>
+    </div>
+
+    <div class="form-grid" style="margin-top:0.75rem;">
+        <div class="form-group">
+            <label>Serial Number (optional)</label>
+            <input name="serial_number" class="form-control" placeholder="For serial tracking...">
+        </div>
+        <div class="form-group">
+            <label>Batch Number (optional)</label>
+            <input name="batch_number" class="form-control" placeholder="For batch tracking...">
+        </div>
+        <div class="form-group">
+            <label>Supplier (for BUY only)</label>
+            <select name="supplier_id" class="form-control">
+                <option value="">— Select Supplier —</option>
+                {% for s in suppliers %}
+                <option value="{{ s.id }}">{{ s.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="action-grid" id="actionGrid">
+        <button type="submit" name="action" value="buy" class="action-btn buy">
+            BUY
+            <span class="sublabel">Create Purchase Order</span>
+        </button>
+        <button type="submit" name="action" value="sell" class="action-btn sell">
+            SELL
+            <span class="sublabel">Add to Sales Order</span>
+        </button>
+        <button type="submit" name="action" value="restock" class="action-btn restock">
+            RESTOCK
+            <span class="sublabel">Add inventory directly</span>
+        </button>
+        <button type="submit" name="action" value="adjustment" class="action-btn adjust">
+            ADJUST
+            <span class="sublabel">Set exact quantity</span>
+        </button>
+    </div>
+</div>
+</form>
+
+<div style="margin-top:1.5rem;padding:1rem;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;font-size:0.85rem;color:#1e40af;">
+    <b>Supported formats:</b> SKU | GS1-128 / GS1 QR (01XXXXXXXXXXXXXX) | EAN-13 | CODE-128 | QR
+</div>
+{% endblock %}

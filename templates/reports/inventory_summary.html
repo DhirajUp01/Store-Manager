@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block page_title %}Inventory Summary{% endblock %}
+{% block page_actions %}{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2> Inventory Summary</h2>
+        <a href="/reports/inventory-summary?export=1" class="btn btn-sm btn-gray"> Export CSV</a>
+    </div>
+    {% if rows %}
+    <table>
+        <thead><tr><th>SKU</th><th>Name</th><th>Warehouse</th><th>Stock</th><th>Reorder At</th><th>Cost</th><th>Selling Price</th></tr></thead>
+        <tbody>
+            {% for r in rows %}
+            <tr style="{% if r.available_qty|int <= r.reorder_point|int %}background:#fff5f5{% endif %}">
+                <td><b>{{ r.sku }}</b></td>
+                <td>{{ r.name }}</td>
+                <td>{{ r.warehouse_name or '—' }}</td>
+                <td><span class="badge {% if r.available_qty|int <= r.reorder_point|int %}badge-red{% else %}badge-green{% endif %}">{{ r.available_qty|int }}</span></td>
+                <td>{{ r.reorder_point }}</td>
+                <td>{{ currency }}{{ "%.2f"|format(r.cost_price) }}</td>
+                <td>{{ currency }}{{ "%.2f"|format(r.selling_price) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state"><p>No inventory data found</p></div>
+    {% endif %}
+</div>
+{% endblock %}

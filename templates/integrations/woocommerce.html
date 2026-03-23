@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block page_title %}Connect WooCommerce — Store Manager{% endblock %}
+{% block breadcrumb %}Integrations / WooCommerce{% endblock %}
+{% block page_actions %}<a href="/integrations" class="btn btn-gray">Back</a>{% endblock %}
+{% block content %}
+<style>
+.connect-card { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 2rem; max-width: 600px; }
+.info-box { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 1rem; font-size: 0.85rem; color: var(--muted); margin-bottom: 1.5rem; }
+.info-box strong { color: var(--text); }
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; font-weight: 500; font-size: 0.88rem; margin-bottom: 0.35rem; }
+.form-group input { width: 100%; padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; font-family: inherit; }
+.form-group input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+</style>
+
+<div class="connect-card">
+    <div style="margin-bottom:1.5rem; padding-bottom:1rem; border-bottom:1px solid var(--border);">
+        <h2 style="font-size:1.2rem;">Connect WooCommerce Store</h2>
+    </div>
+
+    <div class="info-box">
+        <strong>How to get your credentials:</strong><br>
+        Go to your WordPress Admin > WooCommerce > Settings > Advanced > REST API > Create a Consumer Key.<br>
+        Set permissions to <strong>Read/Write</strong>. Copy the Consumer Key and Consumer Secret below.<br>
+        Your Store URL is your WooCommerce site URL (e.g. https://yourstore.com).
+    </div>
+
+    <form method="POST">
+        <div class="form-group">
+            <label>Store URL</label>
+            <input name="store_url" type="url" placeholder="https://yourstore.com" required>
+        </div>
+        <div class="form-group">
+            <label>Consumer Key</label>
+            <input name="api_key" type="text" placeholder="ck_...." required>
+        </div>
+        <div class="form-group">
+            <label>Consumer Secret</label>
+            <input name="access_token" type="password" placeholder="cs_...." required>
+        </div>
+        <div style="display:flex; gap:0.75rem; margin-top:1.5rem;">
+            <button type="submit" class="btn btn-primary" style="flex:1;">Connect Store</button>
+            <a href="/integrations" class="btn btn-gray">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

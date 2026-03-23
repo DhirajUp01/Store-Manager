@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block page_title %}Print Barcodes — Batch{% endblock %}
+{% block page_actions %}<a href="/products/barcodes/batch-print" class="btn btn-gray">← Print More</a>{% endblock %}
+{% block content %}
+<style>
+@media print {
+    .sidebar, .topbar, .btn, form { display: none !important; }
+    body { background: white; }
+    .container { padding: 0; max-width: 100%; }
+    .card { border: none; box-shadow: none; padding: 0; margin: 0; }
+}
+.barcode-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+.barcode-item { border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; text-align: center; page-break-inside: avoid; }
+.barcode-item img { max-width: 100%; height: 80px; object-fit: contain; }
+.barcode-item .sku { font-weight: 700; font-size: 0.85rem; margin-top: 0.5rem; color: #1e293b; }
+.barcode-item .name { font-size: 0.75rem; color: #64748b; margin-top: 0.2rem; }
+.barcode-item .code { font-family: monospace; font-size: 0.7rem; color: #94a3b8; margin-top: 0.2rem; }
+</style>
+<div class="card">
+    <div class="card-header"><h2>Print {{ products|length }} Barcode Labels</h2>
+        <button onclick="window.print()" class="btn btn-primary"> Print</button>
+    </div>
+    {% if products %}
+    <div class="barcode-grid">
+        {% for p in products %}
+        <div class="barcode-item">
+            <img src="/static/barcodes/{{ p.barcode_file }}" alt="{{ p.sku }}">
+            <div class="sku">{{ p.sku }}</div>
+            <div class="name">{{ p.name }}</div>
+            <div class="code">{{ p.code }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state"><p>No valid products found for the given SKUs</p></div>
+    {% endif %}
+</div>
+{% endblock %}

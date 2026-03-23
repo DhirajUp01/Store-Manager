@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block page_title %}New Stock Transfer{% endblock %}
+{% block page_actions %}<a href="/transfers" class="btn btn-gray">← Back</a>{% endblock %}
+{% block content %}
+<div class="card" style="max-width:700px;">
+    <form method="POST">
+        <div class="form-grid">
+            <div class="form-group">
+                <label>From Warehouse *</label>
+                <select name="from_warehouse_id" class="form-control" required>
+                    {% for w in warehouses %}<option value="{{ w.id }}">{{ w.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>To Warehouse *</label>
+                <select name="to_warehouse_id" class="form-control" required>
+                    {% for w in warehouses %}<option value="{{ w.id }}">{{ w.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Sent Date</label>
+                <input name="sent_date" type="date" class="form-control" value="{{ today }}">
+            </div>
+        </div>
+        <div class="form-group"><label>Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
+        <div class="form-group">
+            <label>Select Products</label>
+            <div id="product-list">
+                <div class="product-row" style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
+                    <select name="product_id" class="form-control" style="flex:2;">
+                        <option value="">— Select —</option>
+                        {% for p in products %}<option value="{{ p.id }}">{{ p.sku }} — {{ p.name }}</option>{% endfor %}
+                    </select>
+                    <input name="qty" type="number" min="1" class="form-control" placeholder="Qty" style="flex:1;">
+                </div>
+            </div>
+            <button type="button" onclick="addRow()" class="btn btn-sm btn-gray">+ Add Product</button>
+        </div>
+        <button type="submit" class="btn btn-primary">Create Transfer →</button>
+    </form>
+</div>
+<script>
+function addRow() {
+    var div = document.createElement('div');
+    div.className = 'product-row';
+    div.style = 'display:flex;gap:0.5rem;margin-bottom:0.5rem;';
+    div.innerHTML = document.querySelector('.product-row').outerHTML;
+    document.getElementById('product-list').appendChild(div);
+}
+</script>
+{% endblock %}

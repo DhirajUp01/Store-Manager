@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block page_title %}Import Products{% endblock %}
+{% block bread_title %}Products / Import CSV{% endblock %}
+{% block page_actions %}<a href="/products" class="btn btn-gray">← Back</a>{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header"><h2>CSV Import</h2></div>
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;padding:1rem;border-radius:6px;margin-bottom:1.5rem;font-size:0.88rem;">
+        <b>Format:</b> SKU, Name, Cost Price, Selling Price, Category (one per line)<br>
+        <b>Example:</b> <code>TPF-DOG-001,Premium Dog Collar,199,499,Dog Accessories</code>
+    </div>
+    <form method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <label>Upload CSV File</label>
+            <input type="file" name="file" accept=".csv,.txt" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label>— OR — Paste CSV Data (one product per line)</label>
+            <textarea name="paste_data" class="form-control" rows="8" placeholder="SKU,Name,Cost,Selling,Category&#10;TPF-DOG-001,Premium Dog Collar,199,499,Dog Accessories&#10;TPF-CAT-001,Cat Toy Ball,99,249,Cat Toys"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Import Products</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Product — The Pet Foundry</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f4f4; color: #333; }
+        nav { background: #2c3e50; padding: 1rem 2rem; display: flex; gap: 2rem; align-items: center; }
+        nav .brand { color: #e67e22; font-weight: bold; font-size: 1.2rem; }
+        nav a { color: #ecf0f1; text-decoration: none; font-size: 0.95rem; }
+        .container { max-width: 600px; margin: 2rem auto; padding: 0 1rem; }
+        .card { background: white; border-radius: 8px; padding: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        h1 { margin-bottom: 1.5rem; font-size: 1.3rem; color: #2c3e50; }
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.3rem; font-weight: 500; font-size: 0.9rem; color: #555; }
+        input { width: 100%; padding: 0.6rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.95rem; }
+        input:focus { outline: none; border-color: #e67e22; }
+        .btn { display: inline-block; padding: 0.7rem 1.5rem; background: #e67e22; color: white; text-decoration: none; border-radius: 4px; font-size: 0.95rem; border: none; cursor: pointer; }
+        .btn:hover { background: #d35400; }
+        .error { background: #fde8e8; color: #e74c3c; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem; font-size: 0.9rem; }
+        .info { background: #e8f4fd; color: #2980b9; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <nav>
+        <span class="brand"> The Pet Foundry</span>
+        <a href="/">Dashboard</a>
+        <a href="/products">Products</a>
+        <a href="/scan"> Scan</a>
+    </nav>
+    <div class="container">
+        <div class="card">
+            <h1> Add Single Product</h1>
+            {% if error %}<div class="error">{{ error }}</div>{% endif %}
+            <form method="POST">
+                <div class="form-group">
+                    <label>SKU *</label>
+                    <input name="sku" placeholder="e.g. TPF-DOG-0001" required>
+                </div>
+                <div class="form-group">
+                    <label>Product Name *</label>
+                    <input name="name" placeholder="e.g. Premium Dog Collar" required>
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <input name="category" placeholder="e.g. Dog Accessories">
+                </div>
+                <div class="form-group">
+                    <label>Price (₹)</label>
+                    <input name="price" type="number" step="0.01" placeholder="499.00">
+                </div>
+                <div class="form-group">
+                    <label>Current Stock</label>
+                    <input name="stock" type="number" value="0" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Minimum Stock Alert</label>
+                    <input name="min_stock" type="number" value="5" min="0">
+                </div>
+                <button type="submit" class="btn">Add Product →</button>
+                <a href="/products" style="margin-left:1rem;color:#666;text-decoration:none;">Cancel</a>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

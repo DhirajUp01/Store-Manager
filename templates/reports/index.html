@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block page_title %}Reports{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header"><h2> Inventory Reports</h2></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;">
+        <a href="/reports/inventory-summary" class="report-card" style="display:block;padding:1.25rem;border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--text);transition:all 0.15s;">
+            <div style="font-size:1.5rem;margin-bottom:0.5rem;"></div>
+            <b>Inventory Summary</b>
+            <p style="font-size:0.82rem;color:var(--muted);margin-top:0.3rem;">All products with stock by warehouse</p>
+        </a>
+        <a href="/reports/low-stock" class="report-card" style="display:block;padding:1.25rem;border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--text);">
+            <div style="font-size:1.5rem;margin-bottom:0.5rem;"></div>
+            <b>Low Stock Report</b>
+            <p style="font-size:0.82rem;color:var(--muted);margin-top:0.3rem;">Products below reorder point</p>
+        </a>
+        <a href="/reports/stock-movement" class="report-card" style="display:block;padding:1.25rem;border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--text);">
+            <div style="font-size:1.5rem;margin-bottom:0.5rem;">↕</div>
+            <b>Stock Movement</b>
+            <p style="font-size:0.82rem;color:var(--muted);margin-top:0.3rem;">All stock movements by date range</p>
+        </a>
+        <a href="/reports/valuation" class="report-card" style="display:block;padding:1.25rem;border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--text);">
+            <div style="font-size:1.5rem;margin-bottom:0.5rem;"></div>
+            <b>Inventory Valuation</b>
+            <p style="font-size:0.82rem;color:var(--muted);margin-top:0.3rem;">Stock value at cost and selling price</p>
+        </a>
+        <a href="/reports/supplier-summary" class="report-card" style="display:block;padding:1.25rem;border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--text);">
+            <div style="font-size:1.5rem;margin-bottom:0.5rem;"></div>
+            <b>Supplier Summary</b>
+            <p style="font-size:0.82rem;color:var(--muted);margin-top:0.3rem;">Spend per supplier and PO history</p>
+        </a>
+        <a href="/reports/sales-summary" class="report-card" style="display:block;padding:1.25rem;border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--text);">
+            <div style="font-size:1.5rem;margin-bottom:0.5rem;">🧾</div>
+            <b>Sales Summary</b>
+            <p style="font-size:0.82rem;color:var(--muted);margin-top:0.3rem;">Sales orders by date range</p>
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block page_title %}Label Print — {{ product.sku }}{% endblock %}
+{% block page_actions %}<button onclick="window.print()" class="btn btn-primary"> Print</button>{% endblock %}
+{% block content %}
+<style>
+@media print { .sidebar, .topbar, .btn, .no-print { display: none !important; } body { background: white; } }
+.label-sheet { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; padding: 0.5rem; }
+.label { border: 1px solid #ccc; padding: 0.5rem; text-align: center; }
+.label img { max-width: 100%; height: 50px; object-fit: contain; }
+.label .sku { font-weight: 700; font-size: 0.75rem; margin-top: 0.2rem; }
+.label .name { font-size: 0.65rem; color: #666; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+</style>
+<div class="label-sheet">
+    {% for i in range(qty) %}
+    <div class="label">
+        <img src="/static/barcodes/{{ barcode_file }}" alt="{{ product.sku }}">
+        <div class="sku">{{ product.sku }}</div>
+        <div class="name">{{ product.name }}</div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

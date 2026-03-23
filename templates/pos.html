@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% block page_title %}Point of Sale{% endblock %}
+{% block breadcrumb %}POS{% endblock %}
+{% block content %}
+<style>
+.pos-layout { display: grid; grid-template-columns: 1fr 380px; gap: 1.5rem; height: calc(100vh - 180px); }
+.pos-products { overflow-y: auto; }
+.pos-cart { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; position: sticky; top: 0; display: flex; flex-direction: column; }
+.pos-search { width: 100%; padding: 0.65rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; margin-bottom: 1rem; }
+.pos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; }
+.pos-product-card { background: #f8fafc; border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem; cursor: pointer; transition: all 0.15s; }
+.pos-product-card:hover { border-color: var(--primary); background: #eff6ff; }
+.pos-product-card .sku { font-size: 0.7rem; color: var(--muted); font-family: monospace; }
+.pos-product-card .name { font-size: 0.8rem; font-weight: 600; margin: 0.25rem 0; line-height: 1.2; }
+.pos-product-card .price { font-size: 0.85rem; color: var(--success); font-weight: 700; }
+.pos-product-card .stock { font-size: 0.7rem; color: var(--muted); }
+.pos-cart-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+.pos-cart-item .name { flex: 1; }
+.pos-cart-item .price { margin-left: 0.5rem; }
+.pos-cart-item .remove { color: var(--danger); cursor: pointer; margin-left: 0.5rem; background: none; border: none; font-size: 1rem; cursor: pointer; }
+.pos-totals { margin-top: auto; }
+.pos-totals .row { display: flex; justify-content: space-between; padding: 0.35rem 0; font-size: 0.88rem; }
+.pos-totals .total { font-size: 1.1rem; font-weight: 700; border-top: 2px solid var(--border); padding-top: 0.5rem; margin-top: 0.25rem; }
+.pos-tender { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin: 0.75rem 0; }
+.pos-tender input { padding: 0.5rem; border: 1px solid var(--border); border-radius: 5px; font-size: 0.88rem; }
+.pos-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem; }
+</style>
+
+<div class="card" style="margin-bottom:1rem;">
+    <div style="display:flex; gap:1rem; align-items:center; flex-wrap:wrap;">
+        <label style="font-weight:600; font-size:0.85rem;">Warehouse:</label>
+        <select id="posWarehouse" class="form-control" style="width:auto;" onchange="pos.startSession()">
+            {% for w in warehouses %}<option value="{{ w.id }}">{{ w.name }}</option>{% endfor %}
+        </select>
+        <label style="font-weight:600; font-size:0.85rem;">Cashier:</label>
+        <input id="cashierName" class="form-control" style="width:auto;" placeholder="Name...">
+        <div id="sessionInfo" style="font-size:0.8rem; color:var(--muted); margin-left:auto;"></div>
+    </div>
+</div>
+
+<div class="pos-layout">
+    <div class="pos-products">
+        <input type="text" id="posSearch" class="pos-search" placeholder="Search products by name or SKU..." oninput="pos.filter()">
+        <div class="pos-grid" id="productGrid">
+            {% for p in products %}
+            <div class="pos-product-card" onclick="pos.addItem({{ p.id }})" data-name="{{ p.name|lower }}" data-sku="{{ p.sku|lower }}">
+                <div class="sku">{{ p.sku }}</div>
+                <div class="name">{{ p.name }}</div>
+                <div class="price">{{ currency }}{{ "%.2f"|format(p.selling_price) }}</div>
+                <div class="stock">Stock: {{ p.stock|int }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="pos-cart">
+        <h3 style="font-size:0.9rem; margin-bottom:1rem; text-transform:uppercase; letter-spacing:0.5px;">Current Sale</h3>
+        <div id="cartItems" style="flex:1; overflow-y:auto; min-height:100px;">
+            <div class="empty-state" style="padding:1rem;">
+                <p>No items yet</p>
+            </div>
+        </div>
+
+        <div class="pos-totals">
+            <div class="row"><span>Subtotal</span><span id="posSubtotal">{{ currency }}0.00</span></div>
+            <div class="row"><span>Tax</span><span id="posTax">{{ currency }}0.00</span></div>
+            <div class="row"><span>Discount</span><span id="posDiscount">{{ currency }}0.00</span></div>
+            <div class="row total"><span>Total</span><span id="posTotal">{{ currency }}0.00</span></div>
+        </div>
+
+        <div class="pos-tender">
+            <input type="number" id="posAmountPaid" placeholder="Amount Tendered" oninput="pos.calcChange()">
+            <input type="number" id="posDiscountInput" placeholder="Discount" value="0" oninput="pos.applyDiscount()">
+        </div>
+        <div id="posChange" style="font-size:0.85rem; color:var(--success); font-weight:600;"></div>
+
+        <div class="pos-actions">
+            <button onclick="pos.checkout()" class="btn btn-success btn-block" id="checkoutBtn">Checkout</button>
+            <button onclick="pos.clearCart()" class="btn btn-gray btn-block">Clear</button>
+        </div>
+
+        <div style="margin-top:0.75rem;">
+            <select id="posPaymentMethod" class="form-control" style="font-size:0.83rem;">
+                <option value="cash">Cash</option>
+                <option value="card">Card</option>
+                <option value="upi">UPI</option>
+                <option value="bank_transfer">Bank Transfer</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<script>
+const pos = (function() {
+    let sessionId = null;
+    let sessionNumber = null;
+    let warehouseId = null;
+    let cart = [];
+    let subtotal = 0;
+    let tax = 0;
+    let discount = 0;
+    let total = 0;
+    let products = {{ products|tojson }};
+
+    async function startSession() {
+        warehouseId = document.getElementById('posWarehouse').value;
+        const cashier = document.getElementById('cashierName').value;
+        try {
+            const res = await fetch('/pos/start-session', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `warehouse_id=${warehouseId}&cashier_name=${encodeURIComponent(cashier)}`
+            });
+            const data = await res.json();
+            sessionId = data.session_id;
+            sessionNumber = data.session_number;
+            document.getElementById('sessionInfo').textContent = 'Session: ' + sessionNumber;
+        } catch(e) { console.error(e); }
+    }
+
+    async function addItem(productId) {
+        const existing = cart.find(i => i.product_id === productId);
+        if (existing) {
+            existing.qty += 1;
+            await refreshCart();
+            return;
+        }
+        try {
+            const res = await fetch(`/pos/${sessionId}/add-item`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `product_id=${productId}&qty=1`
+            });
+            const data = await res.json();
+            cart = data.items;
+            updateTotals();
+            renderCart();
+        } catch(e) { console.error(e); }
+    }
+
+    async function removeItem(itemId) {
+        try {
+            const res = await fetch(`/pos/${sessionId}/remove-item/${itemId}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+            });
+            const data = await res.json();
+            cart = data.items;
+            updateTotals();
+            renderCart();
+        } catch(e) { console.error(e); }
+    }
+
+    async function refreshCart() {
+        // Re-fetch from server
+    }
+
+    function updateTotals() {
+        subtotal = cart.reduce((s, i) => s + i.qty * i.unit_price, 0);
+        tax = cart.reduce((t, i) => t + i.qty * i.unit_price * i.tax_rate / 100, 0);
+        discount = parseFloat(document.getElementById('posDiscountInput').value) || 0;
+        total = subtotal + tax - discount;
+        document.getElementById('posSubtotal').textContent = '{{ currency }}' + subtotal.toFixed(2);
+        document.getElementById('posTax').textContent = '{{ currency }}' + tax.toFixed(2);
+        document.getElementById('posDiscount').textContent = '{{ currency }}' + discount.toFixed(2);
+        document.getElementById('posTotal').textContent = '{{ currency }}' + total.toFixed(2);
+    }
+
+    function applyDiscount() {
+        updateTotals();
+    }
+
+    function calcChange() {
+        const paid = parseFloat(document.getElementById('posAmountPaid').value) || 0;
+        const change = paid - total;
+        const changeEl = document.getElementById('posChange');
+        if (paid > 0) {
+            changeEl.textContent = change >= 0 ? 'Change: {{ currency }}' + change.toFixed(2) : 'Short: {{ currency }}' + Math.abs(change).toFixed(2);
+        } else {
+            changeEl.textContent = '';
+        }
+    }
+
+    function renderCart() {
+        const el = document.getElementById('cartItems');
+        if (cart.length === 0) {
+            el.innerHTML = '<div class="empty-state" style="padding:1rem;"><p>No items yet</p></div>';
+            return;
+        }
+        el.innerHTML = cart.map(i => `
+            <div class="pos-cart-item">
+                <span class="name">${i.product_name} x${i.qty}</span>
+                <span class="price">{{ currency }}${(i.qty * i.total / i.qty).toFixed(2)}}</span>
+                <button class="remove" onclick="pos.removeItem(${i.id})">&times;</button>
+            </div>
+        `).join('');
+    }
+
+    async function checkout() {
+        if (!sessionId || cart.length === 0) return;
+        const amountPaid = parseFloat(document.getElementById('posAmountPaid').value) || total;
+        const discountAmt = parseFloat(document.getElementById('posDiscountInput').value) || 0;
+        const paymentMethod = document.getElementById('posPaymentMethod').value;
+        try {
+            const res = await fetch(`/pos/${sessionId}/checkout`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `amount_paid=${amountPaid}&discount_amount=${discountAmt}&payment_method=${paymentMethod}`
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert(`Sale complete!\nInvoice: ${data.invoice_number}\nTotal: {{ currency }}${data.total_amount.toFixed(2)}\nPaid: {{ currency }}${data.amount_paid.toFixed(2)}\nChange: {{ currency }}${data.change_amount.toFixed(2)}`);
+                cart = [];
+                renderCart();
+                updateTotals();
+                document.getElementById('posAmountPaid').value = '';
+                document.getElementById('posChange').textContent = '';
+                await startSession();
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    function clearCart() {
+        cart = [];
+        renderCart();
+        updateTotals();
+    }
+
+    function filter() {
+        const q = document.getElementById('posSearch').value.toLowerCase();
+        document.querySelectorAll('.pos-product-card').forEach(card => {
+            const match = card.dataset.name.includes(q) || card.dataset.sku.includes(q);
+            card.style.display = match ? '' : 'none';
+        });
+    }
+
+    return { startSession, addItem, removeItem, checkout, clearCart, filter, applyDiscount, calcChange };
+})();
+
+window.addEventListener('DOMContentLoaded', () => pos.startSession());
+</script>
+{% endblock %}

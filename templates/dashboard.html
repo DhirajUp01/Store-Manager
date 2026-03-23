@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — {{ company_name }}{% endblock %}
+{% block content %}
+<div class="stats-grid">
+    <div class="stat-card"><div class="num primary">{{ stats.total_products }}</div><div class="label">Total Products</div></div>
+    <div class="stat-card"><div class="num">{{ stats.total_warehouses }}</div><div class="label">Warehouses</div></div>
+    <div class="stat-card"><div class="num success">{{ currency }}{{ "%.0f"|format(stats.total_stock_value) }}</div><div class="label">Stock Value (Cost)</div></div>
+    <div class="stat-card"><div class="num danger">{{ stats.low_stock_count }}</div><div class="label">Low Stock Alerts</div></div>
+    <div class="stat-card"><div class="num warning">{{ stats.pending_orders }}</div><div class="label">Pending Sales Orders</div></div>
+    <div class="stat-card"><div class="num">{{ stats.total_suppliers }}</div><div class="label">Suppliers</div></div>
+    <div class="stat-card"><div class="num">{{ stats.total_invoices }}</div><div class="label">Invoices</div></div>
+    <div class="stat-card"><div class="num">{{ stats.unpaid_invoices }}</div><div class="label">Unpaid Invoices</div></div>
+</div>
+
+<div class="two-col">
+    <div class="card">
+        <div class="card-header"><h2>Low Stock Alerts</h2><a href="/reports/low-stock" class="btn btn-sm btn-primary">View All</a></div>
+        {% if ai_insight %}
+<div class="card" style="margin-top:1rem; background: linear-gradient(135deg, #eff6ff, #f0fdf4); border: 1px solid #bfdbfe;">
+    <div class="card-header"><h2>🤖 AI Quick Insight</h2></div>
+    <p style="padding:1rem; font-size:0.95rem;">{{ ai_insight }}</p>
+</div>
+{% endif %}
+
+{% if low_stock %}
+        <table>
+            <tr><th>SKU</th><th>Product</th><th>Stock</th><th>Reorder At</th></tr>
+            {% for p in low_stock %}
+            <tr>
+                <td><b>{{ p.sku }}</b></td>
+                <td>{{ p.name }}</td>
+                <td><span class="badge badge-red">{{ p.total_stock|int }}</span></td>
+                <td>{{ p.reorder_point }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <div class="empty-state"><p>All products well stocked</p></div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h2>Recent Stock Movements</h2><a href="/reports/stock-movement" class="btn btn-sm btn-primary">View All</a></div>
+        {% if recent_moves %}
+        <table>
+            <tr><th>SKU</th><th>Type</th><th>Qty</th><th>Warehouse</th><th>Time</th></tr>
+            {% for m in recent_moves %}
+            <tr>
+                <td><b>{{ m.sku }}</b></td>
+                <td><span class="badge badge-gray">{{ m.move_type }}</span></td>
+                <td style="color:{% if m.qty_change < 0 %}var(--danger){% else %}var(--success){% endif %}">{% if m.qty_change > 0 %}+{% endif %}{{ m.qty_change }}</td>
+                <td>{{ m.warehouse_name }}</td>
+                <td>{{ m.created_at[:16] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <div class="empty-state"><p>No movements yet</p></div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h2>Recent Sales Orders</h2><a href="/sales-orders" class="btn btn-sm btn-primary">View All</a></div>
+    {% if recent_orders %}
+    <table>
+        <tr><th>SO Number</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Date</th></tr>
+        {% for o in recent_orders %}
+        <tr>
+            <td><b>{{ o.so_number }}</b></td>
+            <td>{{ o.customer_name or '—' }}</td>
+            <td>{{ o.item_count }}</td>
+            <td>{{ currency }}{{ "%.2f"|format(o.total_amount) }}</td>
+            <td><span class="badge {% if o.status=='fulfilled' %}badge-green{% elif o.status=='pending' %}badge-yellow{% else %}badge-gray{% endif %}">{{ o.status }}</span></td>
+            <td>{{ o.order_date }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <div class="empty-state"><p>No sales orders yet</p></div>
+    {% endif %}
+</div>
+{% endblock %}

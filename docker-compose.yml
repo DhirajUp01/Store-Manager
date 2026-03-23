@@ -1,0 +1,34 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    ports:
+      - "5050:5050"
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=production
+      - SECRET_KEY=docker-dev-secret-change-in-prod
+      - DATABASE=tpims.db
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_MODEL=llama3
+    volumes:
+      - ./tpims.db:/app/tpims.db
+      - ./static/barcodes:/app/static/barcodes
+      - ./exports:/app/exports
+    depends_on:
+      - ollama
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    # Uncomment and edit to pre-pull a model:
+    # entrypoint: /bin/bash -c "ollama pull llama3 && exec /bin/ollama serve"
+
+volumes:
+  ollama_data:

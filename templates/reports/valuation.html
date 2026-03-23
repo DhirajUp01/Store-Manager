@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block page_title %}Inventory Valuation{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header"><h2> Inventory Valuation</h2></div>
+    <div class="stats-grid" style="margin-bottom:1.5rem;">
+        <div class="stat-card"><div class="num">{{ currency }}{{ "%.0f"|format(total_value) }}</div><div class="label">Total Cost Value</div></div>
+        <div class="stat-card"><div class="num primary">{{ currency }}{{ "%.0f"|format(total_retail) }}</div><div class="label">Total Retail Value</div></div>
+    </div>
+    {% if rows %}
+    <table>
+        <thead><tr><th>SKU</th><th>Name</th><th>Category</th><th>Qty</th><th>Cost/Unit</th><th>Total Cost</th><th>Sell/Unit</th><th>Total Retail</th></tr></thead>
+        <tbody>
+            {% for r in rows %}
+            <tr>
+                <td><b>{{ r.sku }}</b></td>
+                <td>{{ r.name }}</td>
+                <td>{{ r.category_name or '—' }}</td>
+                <td><b>{{ r.qty|int }}</b></td>
+                <td>{{ currency }}{{ "%.2f"|format(r.cost_price) }}</td>
+                <td>{{ currency }}{{ "%.2f"|format(r.total_value or 0) }}</td>
+                <td>{{ currency }}{{ "%.2f"|format(r.selling_price) }}</td>
+                <td>{{ currency }}{{ "%.2f"|format(r.total_retail_value or 0) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</div>
+{% endblock %}

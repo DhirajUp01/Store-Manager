@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block page_title %}Batch Print Barcodes{% endblock %}
+{% block breadcrumb %}Barcodes / Batch Print{% endblock %}
+{% block page_actions %}<a href="/products" class="btn btn-gray">← Back</a>{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header"><h2>Batch Print Barcodes</h2></div>
+    <form method="POST">
+        <div class="form-group">
+            <label>Enter SKUs (one per line)</label>
+            <textarea name="skus" class="form-control" rows="12" placeholder="TPF-DOG-0001&#10;TPF-DOG-0002&#10;TPF-CAT-0001"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Generate Barcodes →</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block page_title %}New Cycle Count{% endblock %}
+{% block page_actions %}{% endblock %}
+{% block content %}
+<div class="card" style="max-width:500px;">
+    <form method="POST">
+        <div class="form-group">
+            <label>Warehouse *</label>
+            <select name="warehouse_id" class="form-control" required>
+                {% for w in warehouses %}<option value="{{ w.id }}">{{ w.name }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="form-group"><label>Counted By</label><input name="counted_by" class="form-control"></div>
+        <div class="form-group"><label>Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;">All products in this warehouse will be auto-added to the count with current system quantities.</p>
+        <button type="submit" class="btn btn-primary">Start Cycle Count →</button>
+    </form>
+</div>
+{% endblock %}

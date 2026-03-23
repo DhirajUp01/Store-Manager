@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block page_title %}{{ warehouse.name }}{% endblock %}
+{% block page_actions %}{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="info-row"><div class="label">Code</div><div class="value"><b>{{ warehouse.code }}</b></div></div>
+    <div class="info-row"><div class="label">Name</div><div class="value">{{ warehouse.name }}</div></div>
+    <div class="info-row"><div class="label">Address</div><div class="value">{{ warehouse.address or '—' }}</div></div>
+    <div class="info-row"><div class="label">Contact</div><div class="value">{{ warehouse.contact_person or '—' }}</div></div>
+    <div class="info-row"><div class="label">Phone</div><div class="value">{{ warehouse.phone or '—' }}</div></div>
+    <div class="info-row"><div class="label">Email</div><div class="value">{{ warehouse.email or '—' }}</div></div>
+</div>
+<div class="card">
+    <div class="card-header"><h2>Stock in {{ warehouse.name }}</h2></div>
+    {% if inventory %}
+    <table>
+        <tr><th>SKU</th><th>Product</th><th>Available</th><th>Reorder Point</th><th>Selling Price</th></tr>
+        {% for i in inventory %}
+        <tr style="{% if i.available_qty|int <= i.reorder_point|int %}background:#fff5f5{% endif %}">
+            <td><b>{{ i.sku }}</b></td>
+            <td>{{ i.product_name }}</td>
+            <td><span class="badge {% if i.available_qty|int <= i.reorder_point|int %}badge-red{% else %}badge-green{% endif %}">{{ i.available_qty|int }}</span></td>
+            <td>{{ i.reorder_point }}</td>
+            <td>{{ currency }}{{ "%.2f"|format(i.selling_price) }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <div class="empty-state"><p>No stock in this warehouse</p></div>
+    {% endif %}
+</div>
+{% endblock %}

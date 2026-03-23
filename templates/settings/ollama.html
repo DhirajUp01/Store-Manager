@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block page_title %}Ollama AI Settings{% endblock %}
+{% block content %}
+<div class="card" style="max-width:640px;">
+    <div class="card-header"><h2>🤖 Ollama AI Configuration</h2></div>
+    <div style="background:#f0fdf4;border:1px solid #86efac;padding:1rem;border-radius:6px;margin-bottom:1.25rem;font-size:.88rem;">
+        <b>Local AI powered by Ollama.</b> Ollama runs entirely on your machine — no data leaves your server.
+        <a href="https://ollama.com" target="_blank" style="color:#16a34a;">Install Ollama →</a>
+    </div>
+
+    <form method="POST">
+        <div class="form-group">
+            <label>Ollama Base URL</label>
+            <input name="base_url" class="form-control" value="{{ current_url }}" placeholder="http://localhost:11434">
+            <small style="color:var(--muted);font-size:.78rem;margin-top:.2rem;display:block;">The URL where your Ollama server is running.</small>
+        </div>
+        <div class="form-group">
+            <label>Model Name</label>
+            <input name="model" class="form-control" value="{{ current_model }}" placeholder="llama3">
+            <small style="color:var(--muted);font-size:.78rem;margin-top:.2rem;display:block;">E.g. llama3, mistral, codellama, phi3. Must be installed in Ollama.</small>
+        </div>
+        <button type="submit" class="btn btn-primary">Save Ollama Settings</button>
+        <a href="/settings" class="btn btn-gray">Back to Settings</a>
+    </form>
+
+    <div style="margin-top:1.5rem; padding-top:1.25rem; border-top:1px solid var(--border);">
+        <div class="card-header" style="margin-bottom:.75rem;"><h2>Connection Status</h2></div>
+        <div style="display:flex;align-items:center;gap:.75rem;">
+            <span style="width:12px;height:12px;border-radius:50%;background:{{ '#16a34a' if ollama_status == 'connected' else '#dc2626' if ollama_status == 'disconnected' else '#d97706' }};display:inline-block;flex-shrink:0;"></span>
+            <span style="font-weight:600;font-size:.9rem;">
+                {% if ollama_status == 'connected' %}
+                    Connected — Ollama is running and responding
+                {% elif ollama_status == 'disconnected' %}
+                    Disconnected — Ollama is not reachable at <code>{{ current_url }}</code>
+                {% else %}
+                    Status: {{ ollama_status }}
+                {% endif %}
+            </span>
+        </div>
+        {% if ollama_status != 'connected' %}
+        <div style="margin-top:.75rem;background:#fff7ed;border:1px solid #fed7aa;padding:.85rem;border-radius:6px;font-size:.85rem;">
+            <b>To get started:</b>
+            <ol style="margin:.4rem 0 0 1.2rem;padding-left:0;">
+                <li>Install Ollama from <a href="https://ollama.com" target="_blank">ollama.com</a></li>
+                <li>Run <code style="background:#f1f5f9;padding:.1rem .3rem;border-radius:3px;">ollama pull llama3</code> in your terminal</li>
+                <li>Start Ollama: <code style="background:#f1f5f9;padding:.1rem .3rem;border-radius:3px;">ollama serve</code></li>
+                <li>Refresh this page</li>
+            </ol>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card" style="max-width:640px;margin-top:1rem;">
+    <div class="card-header"><h2>💡 AI Features</h2></div>
+    <div style="display:grid;gap:.75rem;">
+        <div style="display:flex;align-items:flex-start;gap:.75rem;padding:.75rem;background:#f8fafc;border-radius:6px;border:1px solid var(--border);">
+            <span style="font-size:1.2rem;">📝</span>
+            <div>
+                <b style="font-size:.9rem;">AI Product Descriptions</b>
+                <p style="color:var(--muted);font-size:.82rem;margin:.2rem 0 0;">Auto-generate compelling product descriptions when adding new products.</p>
+                <code style="font-size:.78rem;color:var(--primary);">POST /api/ai/generate-description</code>
+            </div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:.75rem;padding:.75rem;background:#f8fafc;border-radius:6px;border:1px solid var(--border);">
+            <span style="font-size:1.2rem;">📊</span>
+            <div>
+                <b style="font-size:.9rem;">AI Stock Report</b>
+                <p style="color:var(--muted);font-size:.82rem;margin:.2rem 0 0;">Get actionable insights on out-of-stock and low-stock items.</p>
+                <code style="font-size:.78rem;color:var(--primary);">GET /api/ai/stock-report</code>
+            </div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:.75rem;padding:.75rem;background:#f8fafc;border-radius:6px;border:1px solid var(--border);">
+            <span style="font-size:1.2rem;">🔍</span>
+            <div>
+                <b style="font-size:.9rem;">AI Smart Search</b>
+                <p style="color:var(--muted);font-size:.82rem;margin:.2rem 0 0;">Natural language product search powered by Ollama.</p>
+                <code style="font-size:.78rem;color:var(--primary);">GET /api/ai/search?q=query</code>
+            </div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:.75rem;padding:.75rem;background:#f8fafc;border-radius:6px;border:1px solid var(--border);">
+            <span style="font-size:1.2rem;">💬</span>
+            <div>
+                <b style="font-size:.9rem;">AI Dashboard Insight</b>
+                <p style="color:var(--muted);font-size:.82rem;margin:.2rem 0 0;">Quick restocking recommendation shown on the dashboard when stock is low.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

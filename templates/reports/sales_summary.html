@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block page_title %}Sales Summary{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2>🧾 Sales Summary</h2>
+        <form method="GET" style="display:flex;gap:0.5rem;align-items:center;">
+            <label style="font-size:0.85rem;">From:</label>
+            <input name="from_date" type="date" class="form-control" value="{{ from_date }}" style="width:140px;">
+            <label style="font-size:0.85rem;">To:</label>
+            <input name="to_date" type="date" class="form-control" value="{{ to_date }}" style="width:140px;">
+            <button class="btn btn-sm btn-primary">Filter</button>
+        </form>
+    </div>
+    {% if totals %}
+    <div class="stats-grid" style="margin-bottom:1.5rem;">
+        <div class="stat-card"><div class="num primary">{{ totals.order_count }}</div><div class="label">Total Orders</div></div>
+        <div class="stat-card"><div class="num success">{{ currency }}{{ "%.0f"|format(totals.revenue or 0) }}</div><div class="label">Total Revenue</div></div>
+        <div class="stat-card"><div class="num">{{ currency }}{{ "%.0f"|format(totals.tax or 0) }}</div><div class="label">Total Tax</div></div>
+    </div>
+    {% endif %}
+    {% if orders %}
+    <table>
+        <thead><tr><th>SO Number</th><th>Customer</th><th>Warehouse</th><th>Items</th><th>Subtotal</th><th>Tax</th><th>Total</th><th>Status</th><th>Date</th></tr></thead>
+        <tbody>
+            {% for o in orders %}
+            <tr>
+                <td><b>{{ o.so_number }}</b></td>
+                <td>{{ o.customer_name or '—' }}</td>
+                <td>{{ o.warehouse_name or '—' }}</td>
+                <td>{{ o.item_count }}</td>
+                <td>{{ currency }}{{ "%.2f"|format(o.subtotal) }}</td>
+                <td>{{ currency }}{{ "%.2f"|format(o.tax_amount) }}</td>
+                <td style="font-weight:600;">{{ currency }}{{ "%.2f"|format(o.total_amount) }}</td>
+                <td><span class="badge badge-{% if o.status=='fulfilled' %}green{% elif o.status=='pending' %}yellow{% else %}gray{% endif %}">{{ o.status }}</span></td>
+                <td>{{ o.order_date }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state"><p>No orders in this date range</p></div>
+    {% endif %}
+</div>
+{% endblock %}

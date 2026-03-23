@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block page_title %}Sales Orders{% endblock %}
+{% block page_actions %}<a href="/sales-orders/add" class="btn btn-primary">+ New Order</a>{% endblock %}
+{% block content %}
+<div class="card">
+    <table>
+        <thead><tr><th>SO Number</th><th>Customer</th><th>Warehouse</th><th>Items</th><th>Total</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+        <tbody>
+            {% for o in orders %}
+            <tr>
+                <td><b>{{ o.so_number }}</b></td>
+                <td>{{ o.customer_name or '—' }}</td>
+                <td>{{ o.warehouse_name or '—' }}</td>
+                <td>{{ o.item_count }}</td>
+                <td>{{ currency }}{{ "%.2f"|format(o.total_amount) }}</td>
+                <td><span class="badge badge-{% if o.status=='fulfilled' %}green{% elif o.status=='pending' %}yellow{% else %}gray{% endif %}">{{ o.status }}</span></td>
+                <td>{{ o.order_date }}</td>
+                <td class="actions">
+                    <a href="/sales-orders/{{ o.id }}/edit" class="btn btn-sm btn-gray">Edit</a>
+                    {% if o.status != 'fulfilled' %}
+                    <a href="/sales-orders/{{ o.id }}/fulfill" class="btn btn-sm btn-success">Fulfill</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

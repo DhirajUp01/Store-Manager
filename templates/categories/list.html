@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block page_title %}Categories{% endblock %}
+{% block page_actions %}{% endblock %}
+{% block content %}
+<div class="card" style="max-width:600px;">
+    <div class="card-header"><h2>Product Categories</h2></div>
+    <table>
+        <thead><tr><th>Name</th><th>Description</th><th>Products</th></tr></thead>
+        <tbody>
+            {% for c in categories %}
+            <tr>
+                <td><b>{{ c.name }}</b></td>
+                <td>{{ c.description or '—' }}</td>
+                <td><span class="badge badge-blue">{{ c.product_count }}</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <form method="POST" action="/categories/add" style="margin-top:1.5rem;display:flex;gap:0.5rem;">
+        <input name="name" class="form-control" placeholder="New category name" required style="flex:1;">
+        <input name="description" class="form-control" placeholder="Description (optional)" style="flex:1;">
+        <button type="submit" class="btn btn-primary">+ Add</button>
+    </form>
+</div>
+{% endblock %}

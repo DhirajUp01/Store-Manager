@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block page_title %}Low Stock Report{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header"><h2> Low Stock — {{ products|length }} Products</h2></div>
+    {% if products %}
+    <table>
+        <thead><tr><th>SKU</th><th>Name</th><th>Category</th><th>Current Stock</th><th>Reorder Point</th><th>Shortage</th><th>Cost</th></tr></thead>
+        <tbody>
+            {% for p in products %}
+            <tr style="background:#fff5f5;">
+                <td><b>{{ p.sku }}</b></td>
+                <td>{{ p.name }}</td>
+                <td>{{ p.category_name or '—' }}</td>
+                <td><span class="badge badge-red">{{ p.total_stock|int }}</span></td>
+                <td>{{ p.reorder_point }}</td>
+                <td style="color:var(--danger);font-weight:600;">{{ p.reorder_point - p.total_stock|int }}</td>
+                <td>{{ currency }}{{ "%.2f"|format(p.cost_price) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state"><p> No low stock items. All products are well stocked!</p></div>
+    {% endif %}
+</div>
+{% endblock %}

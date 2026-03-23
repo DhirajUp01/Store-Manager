@@ -1,0 +1,13 @@
+*.db
+*.log
+static/barcodes/*.png
+exports/*
+instance/*
+__pycache__/
+*.pyc
+.DS_Store
+.env
+.coverage
+htmlcov/
+.pid
+TP-IMS.app/

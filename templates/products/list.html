@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block page_title %}Products{% endblock %}
+{% block breadcrumb %}Inventory / Products{% endblock %}
+{% block page_actions %}
+<a href="/products/add" class="btn btn-primary">+ Add Product</a>
+<a href="/products/import" class="btn btn-gray">Import CSV</a>
+<a href="/products/export" class="btn btn-gray">Export</a>
+{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="search-bar">
+        <form method="GET" style="display:flex;gap:0.5rem;flex-wrap:wrap;width:100%;">
+            <input name="sku" class="form-control" placeholder="Search SKU..." value="{{ filters.sku or '' }}" style="max-width:180px;">
+            <input name="name" class="form-control" placeholder="Search name..." value="{{ filters.name or '' }}" style="max-width:220px;">
+            <select name="category_id" class="form-control" style="max-width:180px;">
+                <option value="">All Categories</option>
+                {% for c in categories %}
+                <option value="{{ c.id }}" {% if filters.category_id|int == c.id %}selected{% endif %}>{{ c.name }}</option>
+                {% endfor %}
+            </select>
+            <button class="btn btn-primary" type="submit"> Filter</button>
+            <a href="/products" class="btn btn-gray">Clear</a>
+        </form>
+    </div>
+    <div style="margin-bottom:1rem;">
+        <a href="/products/barcodes/batch-print" class="btn btn-sm btn-gray"> Batch Print Barcodes</a>
+    </div>
+    {% if products %}
+    <table>
+        <thead><tr><th>SKU</th><th>Name</th><th>Category</th><th>Cost</th><th>Selling Price</th><th>Stock</th><th>Format</th><th>Actions</th></tr></thead>
+        <tbody>
+            {% for p in products %}
+            <tr style="{% if p.total_stock|int <= p.reorder_point|int %}background:#fff5f5{% endif %}">
+                <td><b>{{ p.sku }}</b></td>
+                <td>{{ p.name }}</td>
+                <td>{{ p.category_name or '—' }}</td>
+                <td>{{ currency }}{{ "%.2f"|format(p.cost_price) }}</td>
+                <td>{{ currency }}{{ "%.2f"|format(p.selling_price) }}</td>
+                <td>
+                    <span class="badge {% if p.total_stock|int <= p.reorder_point|int %}badge-red{% else %}badge-green{% endif %}">
+                        {{ p.total_stock|int }}
+                    </span>
+                </td>
+                <td><span class="badge badge-blue">{{ p.barcode_format }}</span></td>
+                <td class="actions">
+                    <a href="/products/{{ p.id }}" class="btn btn-sm btn-gray">View</a>
+                    <a href="/products/{{ p.id }}/edit" class="btn btn-sm btn-gray">Edit</a>
+                    <a href="/barcodes/generate/{{ p.id }}" class="btn btn-sm btn-primary"></a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p style="margin-top:1rem;font-size:0.82rem;color:var(--muted);">{{ products|length }} products shown</p>
+    {% else %}
+    <div class="empty-state"><div class="icon"></div><p>No products found. <a href="/products/add" style="color:var(--primary)">Add your first product →</a></p></div>
+    {% endif %}
+</div>
+{% endblock %}

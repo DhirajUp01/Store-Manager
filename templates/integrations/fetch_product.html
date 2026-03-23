@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block page_title %}Import from URL{% endblock %}
+{% block breadcrumb %}Integrations / Import from URL{% endblock %}
+{% block page_actions %}<a href="/integrations" class="btn btn-gray">Back</a>{% endblock %}
+{% block content %}
+<style>
+.fetch-card { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 2rem; max-width: 700px; }
+.url-form { display: flex; gap: 0.75rem; margin-bottom: 1.5rem; }
+.url-form input { flex: 1; padding: 0.7rem 0.9rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; font-family: inherit; }
+.url-form input:focus { outline: none; border-color: var(--primary); }
+.preview-card { border: 2px solid var(--success); border-radius: 10px; padding: 1.5rem; margin-top: 1.5rem; }
+.preview-card h3 { font-size: 1rem; margin-bottom: 1rem; }
+.preview-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+.preview-row .form-group label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.preview-row .form-group input { font-size: 0.9rem; }
+.img-preview { max-width: 120px; border-radius: 6px; border: 1px solid var(--border); }
+.loading { text-align: center; padding: 3rem; color: var(--muted); }
+</style>
+
+<div class="fetch-card">
+    <h2 style="margin-bottom:0.5rem;">Import Product from URL</h2>
+    <p style="font-size:0.88rem; color:var(--muted); margin-bottom:1.5rem;">Paste any product URL to auto-extract product details and create it in your catalog.</p>
+
+    <form method="POST" id="urlForm">
+        <div class="url-form">
+            <input name="product_url" type="url" placeholder="https://..." value="{{ preview.url if preview else '' }}" required>
+            <button type="submit" class="btn btn-primary">Fetch</button>
+        </div>
+    </form>
+
+    {% if error %}
+    <div class="flash flash-error" style="margin-top:1rem;">{{ error }}</div>
+    {% endif %}
+
+    {% if preview %}
+    <div class="preview-card">
+        <h3>Product Preview</h3>
+        <form method="POST" action="/integrations/create-from-url">
+            <input type="hidden" name="product_url" value="{{ preview.url }}">
+            <input type="hidden" name="parsed_name" value="{{ preview.name }}">
+            <input type="hidden" name="parsed_price" value="{{ preview.price }}">
+            <input type="hidden" name="parsed_description" value="{{ preview.description }}">
+            <input type="hidden" name="parsed_image" value="{{ preview.image_url }}">
+
+            <div style="display:grid; grid-template-columns: auto 1fr; gap:1.5rem; margin-bottom:1rem;">
+                {% if preview.image_url %}
+                <img src="{{ preview.image_url }}" class="img-preview" onerror="this.style.display='none'">
+                {% endif %}
+                <div>
+                    <div class="preview-row">
+                        <div class="form-group">
+                            <label>Product Name</label>
+                            <input name="name" class="form-control" value="{{ preview.name }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>SKU</label>
+                            <input name="sku" class="form-control" placeholder="Auto-generated if blank">
+                        </div>
+                        <div class="form-group">
+                            <label>Selling Price</label>
+                            <input name="selling_price" type="number" step="0.01" class="form-control" value="{{ preview.price }}">
+                        </div>
+                        <div class="form-group">
+                            <label>Cost Price</label>
+                            <input name="cost_price" type="number" step="0.01" class="form-control" placeholder="0.00">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea name="description" class="form-control" rows="3">{{ preview.description }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
+                <a href="/integrations" class="btn btn-gray">Cancel</a>
+                <button type="submit" class="btn btn-success">Create Product</button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Pet Foundry — Inventory</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    :root{
+      --primary:#2563eb;--primary-dark:#1d4ed8;--success:#16a34a;
+      --warning:#d97706;--danger:#dc2626;--bg:#f1f5f9;--card:#ffffff;
+      --text:#1e293b;--muted:#64748b;--border:#e2e8f0;--sidebar:#1e293b;
+    }
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;}
+    .flex{display:flex;}
+    .sidebar{width:220px;min-height:100vh;background:var(--sidebar);padding:0;flex-shrink:0;position:fixed;top:0;left:0;overflow-y:auto;}
+    .sidebar .logo{padding:1.2rem 1.5rem;color:#f8fafc;font-size:1rem;font-weight:700;border-bottom:1px solid rgba(255,255,255,0.1);}
+    .sidebar .logo span{color:#60a5fa;}
+    .sidebar .section-label{padding:0.75rem 1.5rem 0.25rem;font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.3);}
+    .sidebar a{display:flex;align-items:center;gap:0.6rem;padding:0.55rem 1.5rem;color:#cbd5e1;text-decoration:none;font-size:0.88rem;transition:all 0.15s;cursor:pointer;}
+    .sidebar a:hover{background:rgba(255,255,255,0.07);color:#f8fafc;}
+    .sidebar a.active{background:rgba(37,99,235,0.25);color:#60a5fa;border-right:3px solid #60a5fa;}
+    .sidebar a .icon{width:18px;text-align:center;font-size:0.9rem;}
+    .main{margin-left:220px;min-height:100vh;}
+    .topbar{background:var(--card);border-bottom:1px solid var(--border);padding:0.9rem 1.5rem;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10;}
+    .topbar h1{font-size:1.05rem;font-weight:600;}
+    .topbar .actions{display:flex;gap:0.5rem;align-items:center;}
+    .container{padding:1.5rem;max-width:1400px;}
+    .card{background:var(--card);border-radius:8px;border:1px solid var(--border);padding:1.25rem;margin-bottom:1.25rem;}
+    .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;}
+    .card-header h2{font-size:0.95rem;font-weight:600;}
+    .card-header h2::before{content:'> ';color:var(--primary);}
+    .btn{display:inline-flex;align-items:center;gap:0.35rem;padding:0.45rem 0.9rem;border-radius:5px;font-size:0.83rem;border:none;cursor:pointer;transition:all 0.15s;font-family:inherit;text-decoration:none;}
+    .btn-primary{background:var(--primary);color:white;}.btn-primary:hover{background:var(--primary-dark);}
+    .btn-success{background:var(--success);color:white;}.btn-success:hover{background:#15803d;}
+    .btn-warning{background:var(--warning);color:white;}
+    .btn-danger{background:var(--danger);color:white;}
+    .btn-gray{background:#e2e8f0;color:var(--text);}.btn-gray:hover{background:#cbd5e1;}
+    .btn-sm{padding:0.3rem 0.6rem;font-size:0.78rem;}
+    .btn:disabled{opacity:0.5;pointer-events:none;}
+    .flash{padding:0.7rem 1rem;border-radius:6px;margin-bottom:1rem;font-size:0.88rem;}
+    .flash-success{background:#dcfce7;color:#166534;border:1px solid #86efac;}
+    .flash-error{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;}
+    table{width:100%;border-collapse:collapse;font-size:0.88rem;}
+    thead tr{background:#f8fafc;}
+    th{text-align:left;padding:0.6rem 0.85rem;font-weight:600;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);border-bottom:2px solid var(--border);}
+    td{padding:0.65rem 0.85rem;border-bottom:1px solid var(--border);vertical-align:middle;}
+    tr:hover td{background:#f8fafc;}
+    .badge{display:inline-block;padding:0.2rem 0.55rem;border-radius:3px;font-size:0.75rem;font-weight:500;}
+    .badge-blue{background:#dbeafe;color:#1e40af;}
+    .badge-green{background:#dcfce7;color:#166534;}
+    .badge-yellow{background:#fef9c3;color:#713f12;}
+    .badge-red{background:#fee2e2;color:#991b1b;}
+    .badge-gray{background:#f1f5f9;color:#475569;}
+    .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;}
+    .form-group{margin-bottom:0.85rem;}
+    .form-group label{display:block;margin-bottom:0.3rem;font-weight:500;font-size:0.85rem;}
+    .form-control{width:100%;padding:0.5rem 0.7rem;border:1px solid var(--border);border-radius:5px;font-size:0.88rem;font-family:inherit;background:white;color:var(--text);}
+    .form-control:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px rgba(37,99,235,0.1);}
+    textarea.form-control{resize:vertical;min-height:70px;}
+    select.form-control{cursor:pointer;}
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem;}
+    .stat-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1.25rem;}
+    .stat-card .num{font-size:1.6rem;font-weight:700;line-height:1.2;}
+    .stat-card .num.primary{color:var(--primary);}
+    .stat-card .num.success{color:var(--success);}
+    .stat-card .num.warning{color:var(--warning);}
+    .stat-card .num.danger{color:var(--danger);}
+    .stat-card .label{font-size:0.8rem;color:var(--muted);margin-top:0.2rem;text-transform:uppercase;letter-spacing:0.5px;}
+    .empty-state{text-align:center;padding:3rem 1rem;color:var(--muted);}
+    .empty-state .icon{font-size:2.5rem;margin-bottom:0.75rem;opacity:0.4;}
+    .search-bar{display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;}
+    .search-bar input{flex:1;min-width:200px;}
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;display:none;align-items:center;justify-content:center;}
+    .modal-overlay.open{display:flex;}
+    .modal{background:white;border-radius:10px;padding:1.75rem;width:90%;max-width:500px;max-height:90vh;overflow-y:auto;}
+    .modal h2{margin-bottom:1rem;font-size:1rem;}
+    .modal .close{float:right;font-size:1.2rem;cursor:pointer;color:var(--muted);background:none;border:none;}
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}
+    @media(max-width:768px){.two-col{grid-template-columns:1fr;}.sidebar{width:60px;}.sidebar .logo,.sidebar .section-label,.sidebar a span{display:none;}.sidebar a{justify-content:center;padding:0.75rem;}.main{margin-left:60px;}}
+    /* Auth */
+    .auth-container{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);}
+    .auth-box{background:white;border-radius:10px;border:1px solid var(--border);padding:2.5rem;width:90%;max-width:400px;}
+    .auth-box h1{font-size:1.3rem;margin-bottom:0.25rem;}
+    .auth-box p{color:var(--muted);margin-bottom:1.5rem;font-size:0.88rem;}
+    .auth-tabs{display:flex;gap:0;margin-bottom:1.5rem;border-bottom:2px solid var(--border);}
+    .auth-tab{padding:0.6rem 1.2rem;font-size:0.85rem;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;font-weight:500;}
+    .auth-tab.active{color:var(--primary);border-bottom-color:var(--primary);}
+    /* POS */
+    .pos-grid{display:grid;grid-template-columns:1fr 340px;gap:1.5rem;}
+    .pos-cart{background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:1rem;}
+    .pos-cart-item{display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid var(--border);font-size:0.88rem;}
+    .pos-total{font-size:1.1rem;font-weight:700;padding:0.75rem 0;border-top:2px solid var(--border);margin-top:0.5rem;}
+    /* AI Chat */
+    .ai-chat-widget{position:fixed;bottom:1.5rem;right:1.5rem;z-index:200;}
+    .ai-chat-btn{width:56px;height:56px;border-radius:50%;background:var(--primary);color:white;border:none;font-size:1.5rem;cursor:pointer;box-shadow:0 4px 12px rgba(37,99,235,0.4);transition:transform 0.2s;}
+    .ai-chat-btn:hover{transform:scale(1.1);}
+    .ai-chat-window{position:absolute;bottom:70px;right:0;width:360px;height:480px;background:white;border-radius:12px;border:1px solid var(--border);display:none;flex-direction:column;box-shadow:0 8px 24px rgba(0,0,0,0.15);overflow:hidden;}
+    .ai-chat-window.open{display:flex;}
+    .ai-chat-header{background:var(--primary);color:white;padding:0.85rem 1rem;display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:0.9rem;}
+    .ai-chat-messages{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:0.75rem;}
+    .ai-msg{ padding:0.6rem 0.85rem;border-radius:8px;font-size:0.88rem;max-width:85%;}
+    .ai-msg.user{align-self:flex-end;background:var(--primary);color:white;}
+    .ai-msg.assistant{align-self:flex-start;background:#f1f5f9;color:var(--text);}
+    .ai-msg.error{align-self:flex-start;background:#fee2e2;color:#991b1b;}
+    .ai-chat-input{display:flex;border-top:1px solid var(--border);}
+    .ai-chat-input input{flex:1;padding:0.75rem;border:none;font-size:0.88rem;}
+    .ai-chat-input input:focus{outline:none;}
+    .ai-chat-input button{background:var(--primary);color:white;border:none;padding:0 1rem;cursor:pointer;}
+    /* Barcode input */
+    .barcode-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:300;display:none;align-items:center;justify-content:center;}
+    .barcode-overlay.open{display:flex;}
+    .barcode-box{background:white;border-radius:12px;padding:2rem;text-align:center;width:400px;}
+    .barcode-box input{width:100%;padding:1rem;font-size:1.2rem;border:2px solid var(--primary);border-radius:8px;text-align:center;margin-top:1rem;}
+    .barcode-box h2{color:white;font-size:1.2rem;}
+    /* Scan page */
+    .scan-area{text-align:center;padding:2rem;}
+    .scan-camera{border:2px dashed var(--border);border-radius:12px;padding:3rem;max-width:500px;margin:0 auto;background:#f8fafc;}
+    .scan-note{color:var(--muted);margin-top:1rem;font-size:0.88rem;}
+    /* Alert */
+    .alert-banner{background:#fef9c3;border:1px solid #fde047;border-radius:6px;padding:0.75rem 1rem;margin-bottom:1rem;color:#713f12;font-size:0.88rem;}
+    /* Loading spinner */
+    .spinner{border:2px solid var(--border);border-top-color:var(--primary);border-radius:50%;width:20px;height:20px;animation:spin 0.6s linear infinite;display:inline-block;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,0.8);z-index:500;display:none;align-items:center;justify-content:center;}
+    .loading-overlay.open{display:flex;}
+    .loading-overlay span{margin-left:0.75rem;font-size:1rem;color:var(--text);}
+  </style>
+</head>
+<body>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <span>Loading...</span>
+</div>
+
+<!-- Barcode Scanner Overlay -->
+<div class="barcode-overlay" id="barcodeOverlay">
+  <div class="barcode-box">
+    <h2>📷 Scan Barcode</h2>
+    <p style="color:var(--muted);font-size:0.88rem;margin-top:0.5rem;">Point your scanner at the barcode or type the SKU manually</p>
+    <input type="text" id="barcodeInput" placeholder="Scan or type SKU..." autofocus>
+    <p style="margin-top:1rem;"><button class="btn btn-primary" onclick="lookupBarcode()">Look Up</button> <button class="btn btn-gray" onclick="closeBarcodeOverlay()">Cancel</button></p>
+  </div>
+</div>
+
+<script>
+// ─── API Configuration ───────────────────────────────────────────────────────
+// Set this to your self-hosted backend URL ( Railway / Render / VPS )
+// For local dev: http://localhost:5050
+const API_BASE = 'http://localhost:5050';
+
+// ─── Auth State ──────────────────────────────────────────────────────────────
+let currentUser = null;
+let authToken = null;
+
+function getAuthHeaders() {
+  const h = {'Content-Type':'application/json'};
+  if (authToken) h['Authorization'] = `Bearer ${authToken}`;
+  return h;
+}
+
+function showLoading(show=true) {
+  document.getElementById('loadingOverlay').classList.toggle('open', show);
+}
+
+// ─── Auth API ────────────────────────────────────────────────────────────────
+async function apiCall(method, path, body) {
+  showLoading();
+  try {
+    const r = await fetch(API_BASE + path, {
+      method,
+      headers: getAuthHeaders(),
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const d = await r.json();
+    showLoading(false);
+    if (!r.ok) throw new Error(d.error || d.message || 'Request failed');
+    return d;
+  } catch(e) {
+    showLoading(false);
+    flash(e.message, 'error');
+    throw e;
+  }
+}
+
+async function login(email, password) {
+  const d = await apiCall('POST', '/auth/login', {email, password});
+  currentUser = d.user || {email};
+  authToken = d.token || localStorage.getItem('token');
+  if (d.token) localStorage.setItem('token', d.token);
+  return d;
+}
+
+async function signup(email, password, company_name) {
+  const d = await apiCall('POST', '/auth/signup', {email, password, company_name});
+  currentUser = d.user || {email};
+  authToken = d.token || localStorage.getItem('token');
+  if (d.token) localStorage.setItem('token', d.token);
+  return d;
+}
+
+function logout() {
+  currentUser = null;
+  authToken = null;
+  localStorage.removeItem('token');
+  showView('login');
+}
+
+// ─── Flash Messages ──────────────────────────────────────────────────────────
+function flash(msg, type='success') {
+  const el = document.getElementById('flash');
+  if (!el) return;
+  el.className = `flash flash-${type}`;
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 4000);
+}
+
+// ─── Navigation ───────────────────────────────────────────────────────────────
+let currentView = 'dashboard';
+
+function showView(name) {
+  currentView = name;
+  document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+  const view = document.getElementById('view-' + name);
+  if (view) view.style.display = 'block';
+  document.querySelectorAll('.sidebar a').forEach(a => {
+    a.classList.toggle('active', a.dataset.view === name ||
+      (name === 'pos' && a.dataset.view === 'pos') ||
+      (name === 'scan' && a.dataset.view === 'scan'));
+  });
+  const titles = {dashboard:'Dashboard',products:'Products',pos:'POS',scan:'Scan',reports:'Reports',settings:'Settings'};
+  document.getElementById('pageTitle').textContent = titles[name] || name;
+  if (name === 'dashboard') loadDashboard();
+  if (name === 'products') loadProducts();
+  if (name === 'reports') loadReports();
+  if (name === 'settings') loadSettings();
+}
+
+// ─── Dashboard ────────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const [stats, lowStock, recentMoves, orders] = await Promise.all([
+      apiCall('GET', '/api/dashboard-stats'),
+      apiCall('GET', '/api/low-stock'),
+      apiCall('GET', '/api/recent-moves'),
+      apiCall('GET', '/api/recent-orders'),
+    ]);
+    renderDashboard(stats, lowStock, recentMoves, orders);
+  } catch(e) {
+    // API may not have these endpoints — show placeholders
+    document.getElementById('statsGrid').innerHTML = `
+      <div class="stat-card"><div class="num primary">—</div><div class="label">Products</div></div>
+      <div class="stat-card"><div class="num">—</div><div class="label">Warehouses</div></div>
+      <div class="stat-card"><div class="num success">—</div><div class="label">Stock Value</div></div>
+      <div class="stat-card"><div class="num danger">—</div><div class="label">Low Stock</div></div>
+      <div class="stat-card"><div class="num warning">—</div><div class="label">Pending Orders</div></div>
+    `;
+    document.getElementById('lowStockTable').innerHTML = '<tr><td colspan="4" class="empty-state">Connect to backend API to load data</td></tr>';
+  }
+}
+
+function renderDashboard(stats, lowStock, recentMoves, orders) {
+  const s = stats || {};
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="num primary">${s.total_products||0}</div><div class="label">Total Products</div></div>
+    <div class="stat-card"><div class="num">${s.total_warehouses||0}</div><div class="label">Warehouses</div></div>
+    <div class="stat-card"><div class="num success">${s.currency_symbol||'Rs.'}${((s.total_stock_value)||0).toFixed(0)}</div><div class="label">Stock Value</div></div>
+    <div class="stat-card"><div class="num danger">${s.low_stock_count||0}</div><div class="label">Low Stock Alerts</div></div>
+    <div class="stat-card"><div class="num warning">${s.pending_orders||0}</div><div class="label">Pending Sales Orders</div></div>
+    <div class="stat-card"><div class="num">${s.total_invoices||0}</div><div class="label">Invoices</div></div>
+  `;
+  const ls = lowStock || [];
+  if (ls.length) {
+    document.getElementById('lowStockTable').innerHTML = ls.slice(0,10).map(p => `
+      <tr><td><b>${p.sku||''}</b></td><td>${p.name||''}</td>
+          <td><span class="badge badge-red">${p.total_stock||0}</span></td>
+          <td>${p.reorder_point||0}</td></tr>
+    `).join('');
+  } else {
+    document.getElementById('lowStockTable').innerHTML = '<tr><td colspan="4" class="empty-state"><p>All products well stocked</p></td></tr>';
+  }
+}
+
+// ─── Products ────────────────────────────────────────────────────────────────
+let allProducts = [];
+
+async function loadProducts() {
+  try {
+    allProducts = await apiCall('GET', '/api/products');
+    renderProducts(allProducts);
+  } catch(e) {
+    document.getElementById('productsTable').innerHTML = '<tr><td colspan="5" class="empty-state"><p>Connect to backend API to load products</p></td></tr>';
+  }
+}
+
+function renderProducts(products) {
+  if (!products.length) {
+    document.getElementById('productsTable').innerHTML = '<tr><td colspan="5" class="empty-state"><p>No products found</p></td></tr>';
+    return;
+  }
+  document.getElementById('productsTable').innerHTML = products.map(p => `
+    <tr>
+      <td><b>${p.sku||''}</b></td>
+      <td>${p.name||''}</td>
+      <td>${p.category||''}</td>
+      <td><span class="badge ${(p.total_stock||0) <= (p.reorder_point||5) ? 'badge-red' : 'badge-green'}">${p.total_stock||0}</span></td>
+      <td>Rs.${((p.selling_price)||0).toFixed(2)}</td>
+    </tr>
+  `).join('');
+}
+
+function searchProducts(q) {
+  if (!q) return renderProducts(allProducts);
+  const lq = q.toLowerCase();
+  renderProducts(allProducts.filter(p =>
+    (p.name||'').toLowerCase().includes(lq) || (p.sku||'').toLowerCase().includes(lq)
+  ));
+}
+
+// ─── POS ──────────────────────────────────────────────────────────────────────
+let posCart = [];
+
+function posAdd(sku) {
+  const input = document.getElementById('posSkuInput');
+  const code = sku || input.value.trim();
+  if (!code) return;
+  const found = allProducts.find(p => p.sku === code || p.barcode === code);
+  if (found) {
+    const existing = posCart.find(i => i.sku === found.sku);
+    if (existing) { existing.qty++; } else { posCart.push({...found, qty:1}); }
+    input.value = '';
+    renderPosCart();
+  } else {
+    flash(`Product not found: ${code}`, 'error');
+  }
+}
+
+function posRemove(sku) {
+  posCart = posCart.filter(i => i.sku !== sku);
+  renderPosCart();
+}
+
+function posChangeQty(sku, delta) {
+  const item = posCart.find(i => i.sku === sku);
+  if (!item) return;
+  item.qty += delta;
+  if (item.qty <= 0) posCart = posCart.filter(i => i.sku !== sku);
+  renderPosCart();
+}
+
+function renderPosCart() {
+  const el = document.getElementById('posCartItems');
+  if (!posCart.length) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:0.88rem;text-align:center;padding:1rem;">Cart is empty</p>';
+  } else {
+    el.innerHTML = posCart.map(i => `
+      <div class="pos-cart-item">
+        <span>${i.name} × ${i.qty}</span>
+        <span>
+          <button class="btn btn-sm btn-gray" onclick="posChangeQty('${i.sku}',-1)">−</button>
+          <button class="btn btn-sm btn-gray" onclick="posChangeQty('${i.sku}',1)">+</button>
+          <button class="btn btn-sm btn-danger" onclick="posRemove('${i.sku}')">✕</button>
+        </span>
+      </div>
+    `).join('');
+  }
+  const total = posCart.reduce((s,i) => s + (i.selling_price||0)*i.qty, 0);
+  document.getElementById('posTotal').textContent = `Rs. ${total.toFixed(2)}`;
+  document.getElementById('posCount').textContent = posCart.reduce((s,i) => s+i.qty, 0);
+}
+
+async function posCheckout() {
+  if (!posCart.length) return;
+  if (!confirm(`Complete sale for Rs.${posCart.reduce((s,i)=>s+(i.selling_price||0)*i.qty,0).toFixed(2)}?`)) return;
+  try {
+    await apiCall('POST', '/api/pos/sale', {items: posCart.map(i => ({sku:i.sku, qty:i.qty}))});
+    flash('Sale completed!');
+    posCart = [];
+    renderPosCart();
+  } catch(e) {
+    flash('Sale failed: ' + e.message, 'error');
+  }
+}
+
+// ─── Reports ───────────────────────────────────────────────────────────────────
+async function loadReports() {
+  try {
+    const [stockReport, salesReport] = await Promise.all([
+      apiCall('GET', '/api/ai/stock-report'),
+      apiCall('GET', '/api/sales-summary'),
+    ]);
+    renderReports(stockReport, salesReport);
+  } catch(e) {
+    document.getElementById('reportsContent').innerHTML = `
+      <div class="card">
+        <div class="card-header"><h2>📊 Reports</h2></div>
+        <p style="color:var(--muted);">Connect to backend API to load reports. AI features require Ollama running locally.</p>
+        <div style="margin-top:1rem;">
+          <button class="btn btn-primary" onclick="runAiStockReport()">🤖 AI Stock Report</button>
+        </div>
+        <div id="aiReportResult" style="margin-top:1rem;"></div>
+      </div>
+    `;
+  }
+}
+
+async function runAiStockReport() {
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = 'Running AI...';
+  const el = document.getElementById('aiReportResult');
+  el.innerHTML = '<div class="spinner"></div> Running analysis...';
+  try {
+    const r = await apiCall('GET', '/api/ai/stock-report');
+    el.innerHTML = `<div class="card" style="margin-top:1rem;background:linear-gradient(135deg,#eff6ff,#f0fdf4);border:1px solid #bfdbfe;">
+      <div class="card-header"><h2>🤖 AI Stock Analysis</h2></div>
+      <pre style="white-space:pre-wrap;font-size:0.88rem;padding:1rem;">${r.insights||'No insights available'}</pre>
+    </div>`;
+  } catch(e) {
+    el.innerHTML = `<p style="color:var(--danger);">Error: ${e.message}. Ensure Ollama is running at ${API_BASE}.</p>`;
+  }
+  btn.disabled = false;
+  btn.textContent = '🤖 AI Stock Report';
+}
+
+function renderReports(stockReport, salesReport) {
+  // basic render
+}
+
+// ─── Settings ────────────────────────────────────────────────────────────────
+function loadSettings() {
+  document.getElementById('settingsContent').innerHTML = `
+    <div class="two-col">
+      <div>
+        <div class="card">
+          <div class="card-header"><h2>⚙️ API Configuration</h2></div>
+          <div class="form-group">
+            <label>Backend API URL</label>
+            <input class="form-control" id="apiBaseInput" value="${API_BASE}" placeholder="http://localhost:5050">
+          </div>
+          <div style="background:#eff6ff;border:1px solid #bfdbfe;padding:1rem;border-radius:6px;margin-bottom:1rem;font-size:.85rem;">
+            This static frontend calls your self-hosted Flask backend. Deploy Flask on Railway/Render/VPS, then update this URL.
+          </div>
+          <button class="btn btn-primary" onclick="saveApiBase()">Save</button>
+        </div>
+        <div class="card">
+          <div class="card-header"><h2>🤖 Ollama AI</h2></div>
+          <div style="background:#f0fdf4;border:1px solid #86efac;padding:1rem;border-radius:6px;margin-bottom:1rem;font-size:.85rem;">
+            <b>Ollama runs locally on your machine.</b> No cloud needed — all AI processing happens on-device.
+          </div>
+          <div class="form-group">
+            <label>Ollama Base URL</label>
+            <input class="form-control" id="ollamaUrl" value="http://localhost:11434">
+          </div>
+          <div class="form-group">
+            <label>Model</label>
+            <input class="form-control" id="ollamaModel" value="llama3">
+          </div>
+          <div id="ollamaStatus" style="font-size:.85rem;margin-top:.5rem;"></div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-header"><h2>ℹ️ System Info</h2></div>
+          <div class="info-row"><span class="label">Frontend</span><span class="value">Static (Netlify)</span></div>
+          <div class="info-row"><span class="label">Backend</span><span class="value">Flask + SQLite</span></div>
+          <div class="info-row"><span class="label">AI Engine</span><span class="value">Ollama (local)</span></div>
+          <div class="info-row"><span class="label">Version</span><span class="value">1.0.0</span></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h2>🚀 Deployment</h2></div>
+          <p style="font-size:.88rem;color:var(--muted);margin-bottom:0.75rem;">Deploy your Flask backend on Railway or Render for free, then connect this static frontend.</p>
+          <a class="btn btn-primary" href="https://railway.app" target="_blank">Deploy on Railway →</a>
+        </div>
+      </div>
+    </div>
+  `;
+  checkOllamaStatus();
+}
+
+function saveApiBase() {
+  const newBase = document.getElementById('apiBaseInput').value.trim();
+  if (newBase) {
+    localStorage.setItem('api_base', newBase);
+    flash('API URL saved!');
+  }
+}
+
+async function checkOllamaStatus() {
+  const el = document.getElementById('ollamaStatus');
+  el.innerHTML = '<div class="spinner"></div> Checking...';
+  try {
+    const r = await fetch('http://localhost:11434/api/tags', {method:'GET',signal:AbortSignal.timeout(4000)});
+    if (r.ok) {
+      el.innerHTML = '<span style="color:var(--success);">✅ Connected — Ollama is running</span>';
+    } else {
+      el.innerHTML = '<span style="color:var(--danger);">⚠️ Ollama returned error</span>';
+    }
+  } catch(e) {
+    el.innerHTML = '<span style="color:var(--danger);">❌ Disconnected — Ollama not reachable</span>';
+  }
+}
+
+// ─── Barcode Lookup ────────────────────────────────────────────────────────────
+function openBarcodeOverlay() {
+  document.getElementById('barcodeOverlay').classList.add('open');
+  document.getElementById('barcodeInput').focus();
+}
+
+function closeBarcodeOverlay() {
+  document.getElementById('barcodeOverlay').classList.remove('open');
+}
+
+async function lookupBarcode() {
+  const code = document.getElementById('barcodeInput').value.trim();
+  closeBarcodeOverlay();
+  if (!code) return;
+  try {
+    const d = await apiCall('GET', `/api/lookup?sku=${encodeURIComponent(code)}`);
+    flash(`Found: ${d.name} — Stock: ${d.total_stock || 0}`);
+  } catch(e) {
+    flash(`Not found: ${code}`, 'error');
+  }
+}
+
+document.getElementById('barcodeInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') lookupBarcode();
+  if (e.key === 'Escape') closeBarcodeOverlay();
+});
+
+// ─── AI Chat Widget ───────────────────────────────────────────────────────────
+let aiChatOpen = false;
+const AI_BASE = 'http://localhost:11434';
+const AI_MODEL = localStorage.getItem('ollama_model') || 'llama3';
+const aiMessages = [];
+
+async function aiChat(message) {
+  const chatMessages = document.getElementById('aiMessages');
+  // Add user message
+  chatMessages.innerHTML += `<div class="ai-msg user">${escapeHtml(message)}</div>`;
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  try {
+    const response = await fetch(`${AI_BASE}/api/chat`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:AI_MODEL,messages:[{role:'user',content:message}],stream:false}),
+      signal:AbortSignal.timeout(60000),
+    });
+    if (!response.ok) throw new Error('Ollama error');
+    const data = await response.json();
+    const reply = data.message?.content || 'No response.';
+    chatMessages.innerHTML += `<div class="ai-msg assistant">${escapeHtml(reply)}</div>`;
+  } catch(e) {
+    chatMessages.innerHTML += `<div class="ai-msg error">⚠️ Ollama unreachable at ${AI_BASE}. Make sure Ollama is running on your machine.</div>`;
+  }
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function toggleAiChat() {
+  aiChatOpen = !aiChatOpen;
+  document.getElementById('aiChatWindow').classList.toggle('open', aiChatOpen);
+}
+
+function sendAiMessage() {
+  const input = document.getElementById('aiInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  aiChat(msg);
+}
+
+document.getElementById('aiInput')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendAiMessage();
+});
+
+function escapeHtml(t) {
+  return (t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── Auth View ────────────────────────────────────────────────────────────────
+let authTab = 'login';
+
+function setAuthTab(tab) {
+  authTab = tab;
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+}
+
+async function handleAuthSubmit() {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const company_name = document.getElementById('authCompany')?.value?.trim() || 'My Store';
+  if (!email || !password) { flash('Please fill in all fields','error'); return; }
+  try {
+    if (authTab === 'login') {
+      await login(email, password);
+    } else {
+      await signup(email, password, company_name);
+    }
+    showApp();
+  } catch(e) {
+    flash(e.message, 'error');
+  }
+}
+
+// ─── App Shell ────────────────────────────────────────────────────────────────
+function showApp() {
+  document.getElementById('authView').style.display = 'none';
+  document.getElementById('appView').style.display = 'block';
+  showView('dashboard');
+}
+
+function initApp() {
+  // Try to restore session
+  const savedToken = localStorage.getItem('token');
+  const savedBase = localStorage.getItem('api_base');
+  if (savedBase) API_BASE = savedBase;
+  if (savedToken) {
+    authToken = savedToken;
+    // Try to validate token by calling API
+    apiCall('GET', '/auth/me').then(user => {
+      currentUser = user;
+      showApp();
+    }).catch(() => {
+      document.getElementById('authView').style.display = 'flex';
+      document.getElementById('appView').style.display = 'none';
+    });
+  } else {
+    document.getElementById('authView').style.display = 'flex';
+    document.getElementById('appView').style.display = 'none';
+  }
+}
+
+// ─── Scan Page ────────────────────────────────────────────────────────────────
+function initScan() {
+  openBarcodeOverlay();
+}
+
+// ─── Render Sidebar Nav ───────────────────────────────────────────────────────
+function renderSidebar() {
+  // sidebar is hardcoded in HTML
+}
+
+// ─── Boot ─────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // Setup sidebar nav
+  document.querySelectorAll('.sidebar a[data-view]').forEach(a => {
+    a.addEventListener('click', e => { e.preventDefault(); showView(a.dataset.view); });
+  });
+  initApp();
+});
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     AUTH VIEW
+═══════════════════════════════════════════════════════════════════ -->
+<div class="auth-container" id="authView" style="display:none;">
+  <div class="auth-box">
+    <h1>🏪 The Pet Foundry</h1>
+    <p>Inventory Management System</p>
+    <div class="auth-tabs">
+      <div class="auth-tab active" data-tab="login" onclick="setAuthTab('login')">Sign In</div>
+      <div class="auth-tab" data-tab="signup" onclick="setAuthTab('signup')">Sign Up</div>
+    </div>
+    <div class="form-group"><label>Email</label><input type="email" id="authEmail" class="form-control" placeholder="admin@store.com"></div>
+    <div class="form-group"><label>Password</label><input type="password" id="authPassword" class="form-control" placeholder="••••••••"></div>
+    <div class="form-group" id="authCompanyGroup" style="display:none;"><label>Company Name</label><input type="text" id="authCompany" class="form-control" value="My Store"></div>
+    <button class="btn btn-primary btn-block" onclick="handleAuthSubmit()">Continue</button>
+    <p style="margin-top:1rem;font-size:.78rem;color:var(--muted);text-align:center;">
+      This frontend connects to your self-hosted backend at <code id="authApiBase">http://localhost:5050</code>
+    </p>
+  </div>
+</div>
+
+<script>
+// Update auth tab visibility
+const _setAuthTab = setAuthTab;
+setAuthTab = function(tab) {
+  _setAuthTab(tab);
+  document.getElementById('authCompanyGroup').style.display = tab === 'signup' ? 'block' : 'none';
+};
+document.getElementById('authApiBase').textContent = API_BASE;
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     APP VIEW
+═══════════════════════════════════════════════════════════════════ -->
+<div id="appView" style="display:none;">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="logo"><span>The Pet Foundry</span></div>
+    <nav>
+      <a href="#" data-view="dashboard" class="active">Dashboard</a>
+      <div class="section-label">Catalog</div>
+      <a href="#" data-view="products">Products</a>
+      <a href="#" data-view="categories">Categories</a>
+      <a href="#" data-view="barcodes">Barcodes</a>
+      <div class="section-label">Inventory</div>
+      <a href="#" data-view="warehouses">Warehouses</a>
+      <a href="#" data-view="transfers">Transfers</a>
+      <a href="#" data-view="adjustments">Adjustments</a>
+      <div class="section-label">Operations</div>
+      <a href="#" data-view="purchase-orders">Purchase Orders</a>
+      <a href="#" data-view="sales-orders">Sales Orders</a>
+      <a href="#" data-view="invoices">Invoices</a>
+      <a href="#" data-view="pos" class="">POS</a>
+      <a href="#" data-view="scan" class="">📷 Scan</a>
+      <div class="section-label">Analytics</div>
+      <a href="#" data-view="reports">Reports</a>
+      <div class="section-label">System</div>
+      <a href="#" data-view="settings">⚙️ Settings</a>
+    </nav>
+    <div style="padding:1rem 1.5rem;border-top:1px solid rgba(255,255,255,0.1);margin-top:auto;">
+      <button class="btn btn-sm btn-gray" onclick="logout()" style="width:100%;color:#94a3b8;justify-content:center;">Logout</button>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="breadcrumb">The Pet Foundry / <span id="pageTitle">Dashboard</span></div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-sm btn-gray" onclick="openBarcodeOverlay()">📷 Scan</button>
+      </div>
+    </div>
+    <div class="container">
+
+      <!-- Flash -->
+      <div id="flash" class="flash" style="display:none;"></div>
+
+      <!-- ═══ DASHBOARD ═══ -->
+      <div class="view" id="view-dashboard">
+        <div id="statsGrid" class="stats-grid"></div>
+
+        <!-- AI Insight -->
+        <div class="card" id="aiInsightCard" style="display:none;background:linear-gradient(135deg,#eff6ff,#f0fdf4);border:1px solid #bfdbfe;">
+          <div class="card-header"><h2>🤖 AI Quick Insight</h2></div>
+          <p id="aiInsightText" style="padding:1rem;font-size:0.95rem;"></p>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header"><h2>Low Stock Alerts</h2></div>
+            <table>
+              <thead><tr><th>SKU</th><th>Product</th><th>Stock</th><th>Reorder At</th></tr></thead>
+              <tbody id="lowStockTable"></tbody>
+            </table>
+          </div>
+          <div class="card">
+            <div class="card-header"><h2>Recent Stock Movements</h2></div>
+            <table>
+              <thead><tr><th>SKU</th><th>Type</th><th>Qty</th><th>Time</th></tr></thead>
+              <tbody id="recentMovesTable"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h2>Recent Sales Orders</h2></div>
+          <table>
+            <thead><tr><th>SO Number</th><th>Customer</th><th>Total</th><th>Status</th><th>Date</th></tr></thead>
+            <tbody id="recentOrdersTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ═══ PRODUCTS ═══ -->
+      <div class="view" id="view-products" style="display:none;">
+        <div class="card-header" style="margin-bottom:1rem;">
+          <h2>Products</h2>
+          <button class="btn btn-primary" onclick="flash('Use Flask backend to add products','info')">+ Add Product</button>
+        </div>
+        <div class="search-bar">
+          <input class="form-control" placeholder="Search by name or SKU..." oninput="searchProducts(this.value)">
+        </div>
+        <div class="card">
+          <table>
+            <thead><tr><th>SKU</th><th>Name</th><th>Category</th><th>Stock</th><th>Price</th></tr></thead>
+            <tbody id="productsTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ═══ POS ═══ -->
+      <div class="view" id="view-pos" style="display:none;">
+        <div class="pos-grid">
+          <div>
+            <div class="card">
+              <div class="card-header"><h2>Quick Sale</h2></div>
+              <div class="search-bar">
+                <input class="form-control" id="posSkuInput" placeholder="Enter SKU or barcode..." onkeydown="if(event.key==='Enter')posAdd()">
+                <button class="btn btn-primary" onclick="posAdd()">Add</button>
+              </div>
+              <div style="background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:1rem;margin-top:1rem;cursor:pointer;" onclick="openBarcodeOverlay()">
+                <span style="font-size:2rem;">📷</span>
+                <p style="color:var(--muted);font-size:.85rem;margin-top:.25rem;">Click to scan barcode</p>
+              </div>
+            </div>
+          </div>
+          <div class="pos-cart">
+            <div class="card-header" style="margin-bottom:0.5rem;"><h2>🛒 Cart <span class="badge badge-blue" id="posCount">0</span></h2></div>
+            <div id="posCartItems"><p style="color:var(--muted);font-size:0.88rem;text-align:center;padding:1rem;">Cart is empty</p></div>
+            <div class="pos-total">Total: <span id="posTotal">Rs. 0.00</span></div>
+            <button class="btn btn-success btn-block" onclick="posCheckout()" style="margin-top:1rem;">💳 Checkout</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SCAN ═══ -->
+      <div class="view" id="view-scan" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2>📷 Barcode Scanner</h2></div>
+          <div class="scan-area">
+            <div class="scan-camera">
+              <div style="font-size:3rem;margin-bottom:1rem;">📷</div>
+              <p style="font-size:.95rem;font-weight:600;">Point your barcode scanner</p>
+              <p class="scan-note">Or type the SKU manually below</p>
+              <input class="form-control" id="scanSkuInput" placeholder="SKU or barcode..." style="margin-top:1rem;text-align:center;" onkeydown="if(event.key==='Enter')lookupBarcode()">
+              <button class="btn btn-primary" onclick="lookupBarcode()" style="margin-top:0.75rem;">Look Up</button>
+            </div>
+            <div id="scanResult" style="margin-top:1.5rem;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ REPORTS ═══ -->
+      <div class="view" id="view-reports" style="display:none;">
+        <div id="reportsContent">
+          <div class="card">
+            <div class="card-header"><h2>📊 Reports</h2></div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem;">
+              <div class="stat-card" style="cursor:pointer;" onclick="runAiStockReport()">
+                <div style="font-size:1.5rem;margin-bottom:0.5rem;">🤖</div>
+                <div style="font-weight:600;">AI Stock Report</div>
+                <div style="font-size:.78rem;color:var(--muted);margin-top:.25rem;">Powered by Ollama</div>
+              </div>
+              <div class="stat-card">
+                <div style="font-size:1.5rem;margin-bottom:0.5rem;">📉</div>
+                <div style="font-weight:600;">Low Stock Report</div>
+                <div style="font-size:.78rem;color:var(--muted);margin-top:.25rem;">Items below reorder point</div>
+              </div>
+              <div class="stat-card">
+                <div style="font-size:1.5rem;margin-bottom:0.5rem;">📈</div>
+                <div style="font-weight:600;">Sales Summary</div>
+                <div style="font-size:.78rem;color:var(--muted);margin-top:.25rem;">Revenue & orders</div>
+              </div>
+            </div>
+            <div id="aiReportResult"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SETTINGS ═══ -->
+      <div class="view" id="view-settings" style="display:none;">
+        <div id="settingsContent"></div>
+      </div>
+
+      <!-- ═══ PLACEHOLDER VIEWS ═══ -->
+      <div class="view" id="view-categories" style="display:none;">
+        <div class="card"><div class="card-header"><h2>Categories</h2></div>
+          <p style="color:var(--muted);">Manage categories via the Flask backend at <code>${API_BASE}</code></p>
+        </div>
+      </div>
+      <div class="view" id="view-barcodes" style="display:none;">
+        <div class="card"><div class="card-header"><h2>Barcodes</h2></div>
+          <p style="color:var(--muted);">Generate & manage barcodes via the Flask backend.</p>
+        </div>
+      </div>
+      <div class="view" id="view-warehouses" style="display:none;">
+        <div class="card"><div class="card-header"><h2>Warehouses</h2></div>
+          <p style="color:var(--muted);">Manage warehouses via the Flask backend.</p>
+        </div>
+      </div>
+      <div class="view" id="view-transfers" style="display:none;">
+        <div class="card"><div class="card-header"><h2>Transfers</h2></div>
+          <p style="color:var(--muted);">Manage stock transfers via the Flask backend.</p>
+        </div>
+      </div>
+      <div class="view" id="view-adjustments" style="display:none;">
+        <div class="card"><div class="card-header"><h2>Adjustments</h2></div>
+          <p style="color:var(--muted);">Stock adjustments via the Flask backend.</p>
+        </div>
+      </div>
+      <div class="view" id="view-purchase-orders" style="display:none;">
+        <div class="card"><div class="card-header"><h2>Purchase Orders</h2></div>
+          <p style="color:var(--muted);">Manage POs via the Flask backend.</p>
+        </div>
+      </div>
+      <div class="view" id="view-sales-orders" style="display:none;">
+        <div class="card"><div class="card-header"><h2>Sales Orders</h2></div>
+          <p style="color:var(--muted);">Manage SOs via the Flask backend.</p>
+        </div>
+      </div>
+      <div class="view" id="view-invoices" style="display:none;">
+        <div class="card"><div class="card-header"><h2>Invoices</h2></div>
+          <p style="color:var(--muted);">Manage invoices via the Flask backend.</p>
+        </div>
+      </div>
+
+    </div><!-- /container -->
+  </div><!-- /main -->
+
+  <!-- ═══ AI CHAT WIDGET ═══ -->
+  <div class="ai-chat-widget">
+    <div class="ai-chat-window" id="aiChatWindow">
+      <div class="ai-chat-header">
+        <span>🤖 AI Assistant</span>
+        <button onclick="toggleAiChat()" style="background:none;border:none;color:white;font-size:1.1rem;cursor:pointer;">✕</button>
+      </div>
+      <div class="ai-chat-messages" id="aiMessages">
+        <div class="ai-msg assistant">👋 Hi! I'm powered by Ollama running locally. Ask me anything about your inventory!</div>
+      </div>
+      <div class="ai-chat-input">
+        <input type="text" id="aiInput" placeholder="Ask about your inventory..." onkeydown="if(event.key==='Enter')sendAiMessage()">
+        <button onclick="sendAiMessage()">Send</button>
+      </div>
+    </div>
+    <button class="ai-chat-btn" onclick="toggleAiChat()" title="AI Assistant">🤖</button>
+  </div>
+
+</div><!-- /appView -->
+
+</body>
+</html>

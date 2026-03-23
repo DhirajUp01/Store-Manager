@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block page_title %}Barcode Hub{% endblock %}
+{% block page_actions %}<a href="/products/barcodes/batch-print" class="btn btn-primary">+ Batch Print</a>{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header"><h2>All Products — Click to Generate Barcode</h2></div>
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Search by SKU or name..." class="form-control" style="max-width:300px;">
+    </div>
+    <table id="barcodeTable">
+        <thead><tr><th>SKU</th><th>Name</th><th>Category</th><th>Price</th><th>Format</th><th>Actions</th></tr></thead>
+        <tbody>
+            {% for p in products %}
+            <tr data-search="{{ p.sku.lower() }} {{ p.name.lower() }}">
+                <td><b>{{ p.sku }}</b></td>
+                <td>{{ p.name }}</td>
+                <td>{{ p.category_name or '—' }}</td>
+                <td>{{ currency }}{{ "%.2f"|format(p.selling_price) }}</td>
+                <td><span class="badge badge-blue">{{ p.barcode_format }}</span></td>
+                <td class="actions">
+                    <a href="/barcodes/generate/{{ p.id }}" class="btn btn-sm btn-primary"> View / Print</a>
+                    <a href="/barcodes/print-label/{{ p.id }}" class="btn btn-sm btn-gray"> Label</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<script>
+document.getElementById('searchInput').addEventListener('keyup', function() {
+    var q = this.value.toLowerCase();
+    document.querySelectorAll('#barcodeTable tbody tr').forEach(function(row) {
+        row.style.display = row.dataset.search.includes(q) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

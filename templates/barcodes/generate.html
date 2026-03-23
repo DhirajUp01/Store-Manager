@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block page_title %}Generate Barcode — {{ product.sku }}{% endblock %}
+{% block page_actions %}<a href="/barcodes" class="btn btn-gray">← Barcode Hub</a>{% endblock %}
+{% block content %}
+<div class="two-col">
+    <div class="card" style="text-align:center;">
+        <div class="card-header"><h2>Barcode Preview</h2></div>
+        <img src="/static/barcodes/{{ barcode_file }}" alt="{{ product.sku }}" style="max-width:100%;border:1px solid var(--border);padding:1rem;background:white;">
+        <div style="margin-top:1rem;">
+            <p style="font-weight:600;font-size:1rem;">{{ product.sku }}</p>
+            <p style="color:var(--muted);font-size:0.88rem;">{{ product.name }}</p>
+            <div class="code-display">{{ code_str }}</div>
+            <p style="font-size:0.78rem;color:var(--muted);margin-top:0.3rem;">Format: <b>{{ actual_format }}</b></p>
+        </div>
+        <div style="margin-top:1.5rem;display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;">
+            <a href="/static/barcodes/{{ barcode_file }}" download class="btn btn-primary"> Download PNG</a>
+            <button onclick="window.print()" class="btn btn-gray"> Print</button>
+            <a href="/barcodes/print-label/{{ product.id }}?format={{ actual_format }}" class="btn btn-gray"> Print Label</a>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><h2>Regenerate in Different Format</h2></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+            {% for fmt in barcode_formats %}
+            <a href="/barcodes/generate/{{ product.id }}?format={{ fmt }}" class="btn {% if actual_format == fmt %}btn-primary{% else %}btn-gray{% endif %}">{{ fmt }}</a>
+            {% endfor %}
+        </div>
+        <div style="margin-top:1.5rem;">
+            <h3 style="font-size:0.9rem;margin-bottom:0.75rem;">Product Details</h3>
+            <div class="info-row"><div class="label">SKU</div><div class="value">{{ product.sku }}</div></div>
+            <div class="info-row"><div class="label">Price</div><div class="value">{{ currency }}{{ "%.2f"|format(product.selling_price) }}</div></div>
+            <div class="info-row"><div class="label">Format</div><div class="value">{{ actual_format }}</div></div>
+            <div class="info-row"><div class="label">GS1 Code</div><div class="value"><code>{{ code_str }}</code></div></div>
+        </div>
+    </div>
+</div>
+{% endblock %}

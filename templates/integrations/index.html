@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block page_title %}Integrations{% endblock %}
+{% block breadcrumb %}Integrations{% endblock %}
+
+{% block page_actions %}
+{% endblock %}
+
+{% block content %}
+
+<style>
+.intro-banner { background: linear-gradient(135deg, #1e293b, #1d4ed8); border-radius: 12px; padding: 2rem; color: white; margin-bottom: 1.5rem; }
+.intro-banner h1 { font-size: 1.3rem; margin-bottom: 0.5rem; }
+.intro-banner p { color: rgba(255,255,255,0.7); font-size: 0.9rem; }
+.integration-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+.int-card { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; }
+.int-card h3 { font-size: 1rem; margin-bottom: 0.5rem; }
+.int-card p { font-size: 0.83rem; color: var(--muted); margin-bottom: 1rem; line-height: 1.5; }
+.int-card .status { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.status.connected { background: #dcfce7; color: #166534; }
+.status.disconnected { background: #f1f5f9; color: #64748b; }
+.url-import { background: white; border: 2px dashed var(--border); border-radius: 10px; padding: 2rem; text-align: center; }
+.url-import h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+.url-import p { font-size: 0.85rem; color: var(--muted); margin-bottom: 1.25rem; }
+.url-import input { width: 100%; max-width: 500px; padding: 0.65rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; margin-bottom: 0.75rem; }
+.key-row { display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+.key-row:last-child { border-bottom: none; }
+.key-row .key-name { font-weight: 500; }
+.key-row .key-meta { font-size: 0.78rem; color: var(--muted); }
+.key-value { font-family: monospace; background: #1e293b; color: #60a5fa; padding: 0.5rem 0.8rem; border-radius: 4px; font-size: 0.85rem; word-break: break-all; }
+.api-key-card { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem; }
+.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
+.modal.show { display: flex; }
+.modal-content { background: white; border-radius: 12px; padding: 2rem; width: 500px; max-width: 90%; }
+</style>
+
+<div class="intro-banner">
+    <h1>Store Integrations</h1>
+    <p>Connect your online stores, manage API access, and import products from any platform</p>
+</div>
+
+<!-- URL Import Section -->
+<div class="url-import" style="margin-bottom: 1.5rem;">
+    <h3>Import Product from URL</h3>
+    <p>Paste any product URL from your store, Amazon, Flipkart, or any e-commerce site</p>
+    <form method="POST" action="/integrations/fetch-from-url">
+        <input name="product_url" type="url" placeholder="https://..." required>
+        <button type="submit" class="btn btn-primary" style="margin-top:0.5rem;">Fetch Product</button>
+    </form>
+</div>
+
+<div class="two-col" style="margin-bottom: 1.5rem;">
+    <!-- API Keys -->
+    <div>
+        <div class="card">
+            <div class="card-header"><h2>API Keys</h2></div>
+            <p style="font-size:0.83rem; color:var(--muted); margin-bottom:1rem;">API keys let external tools and integrations connect to your Store Manager data.</p>
+
+            <div style="margin-bottom:1rem;">
+                {% for k in api_keys %}
+                <div class="key-row">
+                    <div>
+                        <div class="key-name">{{ k.name }}</div>
+                        <div class="key-meta">Created {{ k.created_at[:10] }} {% if k.last_used %} | Last used {{ k.last_used[:10] }}{% endif %}</div>
+                    </div>
+                    <form method="POST" action="/integrations/revoke-api-key/{{ k.id }}" onsubmit="return confirm('Revoke this key? Existing integrations will stop working.')">
+                        <button type="submit" class="btn btn-sm btn-danger">Revoke</button>
+                    </form>
+                </div>
+                {% else %}
+                <p style="font-size:0.85rem; color:var(--muted); padding: 0.5rem 0;">No API keys yet</p>
+                {% endfor %}
+            </div>
+
+            <form method="POST" action="/integrations/generate-api-key">
+                <div style="display:flex; gap:0.5rem;">
+                    <input name="key_name" class="form-control" placeholder="Key name (e.g. Production, Shopify Sync)" style="flex:1;">
+                    <button type="submit" class="btn btn-primary">Generate Key</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card" style="margin-top:1rem;">
+            <div class="card-header"><h2>Open API Documentation</h2></div>
+            <p style="font-size:0.83rem; color:var(--muted); margin-bottom:1rem;">Build custom integrations using our REST API.</p>
+            <a href="/api/docs" class="btn btn-gray">View API Docs</a>
+        </div>
+    </div>
+
+    <!-- Store Integrations -->
+    <div>
+        <div class="card">
+            <div class="card-header"><h2>Connected Stores</h2></div>
+
+            {% for int in integrations %}
+            <div style="border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                    <strong style="text-transform:uppercase; font-size:0.85rem;">{{ int.platform }}</strong>
+                    <span class="status {% if int.is_active %}connected{% else %}disconnected{% endif %}">
+                        {{ 'Connected' if int.is_active else 'Disconnected' }}
+                    </span>
+                </div>
+                <div style="font-size:0.83rem; color:var(--muted); margin-bottom:0.75rem;">
+                    {% if int.store_url %}{{ int.store_url }}{% else %}No URL{% endif %}
+                </div>
+                <div style="display:flex; gap:0.5rem;">
+                    {% if int.is_active %}
+                    <form method="POST" action="/integrations/import-products" style="flex:1;">
+                        <input type="hidden" name="integration_id" value="{{ int.id }}">
+                        <button type="submit" class="btn btn-sm btn-success btn-block">Sync Products</button>
+                    </form>
+                    {% endif %}
+                    <form method="GET" action="/integrations/{{ int.platform }}">
+                        <button type="submit" class="btn btn-sm btn-gray">Edit</button>
+                    </form>
+                    <form method="POST" action="/integrations/disconnect/{{ int.id }}" onsubmit="return confirm('Disconnect this store?')">
+                        <button type="submit" class="btn btn-sm btn-danger">Disconnect</button>
+                    </form>
+                </div>
+            </div>
+            {% else %}
+            <p style="font-size:0.85rem; color:var(--muted); margin-bottom:1rem;">No stores connected yet</p>
+            {% endfor %}
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top:1rem;">
+                <a href="/integrations/shopify" class="btn btn-gray" style="text-align:center; padding:0.75rem;">Shopify</a>
+                <a href="/integrations/woocommerce" class="btn btn-gray" style="text-align:center; padding:0.75rem;">WooCommerce</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if generated_key %}
+<div id="keyModal" class="modal show">
+    <div class="modal-content">
+        <h3 style="margin-bottom:1rem;">API Key Created</h3>
+        <div class="flash flash-warning" style="margin-bottom:1rem;">
+            Copy this key now — it will not be shown again.
+        </div>
+        <div class="key-value" style="margin-bottom:1rem; word-break:break-all;">{{ generated_key }}</div>
+        <button onclick="document.getElementById('keyModal').style.display='none'" class="btn btn-primary btn-block">Done</button>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block page_title %}Cycle Counts{% endblock %}
+{% block page_actions %}<a href="/cycle-counts/add" class="btn btn-primary">+ New Cycle Count</a>{% endblock %}
+{% block content %}
+<div class="card">
+    <table>
+        <thead><tr><th>Count Number</th><th>Warehouse</th><th>Status</th><th>Scheduled</th><th>Counted By</th><th>Completed</th><th>Actions</th></tr></thead>
+        <tbody>
+            {% for c in counts %}
+            <tr>
+                <td><b>{{ c.count_number }}</b></td>
+                <td>{{ c.warehouse_name }}</td>
+                <td><span class="badge badge-{% if c.status=='completed' %}green{% else %}yellow{% endif %}">{{ c.status }}</span></td>
+                <td>{{ c.scheduled_date or '—' }}</td>
+                <td>{{ c.counted_by or '—' }}</td>
+                <td>{{ c.completed_at[:16] if c.completed_at else '—' }}</td>
+                <td class="actions">
+                    {% if c.status == 'in_progress' %}
+                    <a href="/cycle-counts/{{ c.id }}/view" class="btn btn-sm btn-primary">Count</a>
+                    {% else %}
+                    <a href="/cycle-counts/{{ c.id }}/view" class="btn btn-sm btn-gray">View</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block page_title %}Suppliers{% endblock %}
+{% block page_actions %}<a href="/suppliers/add" class="btn btn-primary">+ Add Supplier</a>{% endblock %}
+{% block content %}
+<div class="card">
+    <table>
+        <tr><th>Code</th><th>Name</th><th>Contact</th><th>Phone</th><th>GSTIN</th><th>POs</th><th>Total Spent</th><th>Actions</th></tr>
+        {% for s in suppliers %}
+        <tr>
+            <td><b>{{ s.code or '—' }}</b></td>
+            <td>{{ s.name }}</td>
+            <td>{{ s.contact_name or '—' }}</td>
+            <td>{{ s.phone or '—' }}</td>
+            <td>{{ s.gstin or '—' }}</td>
+            <td>{{ s.po_count }}</td>
+            <td>{{ currency }}{{ "%.0f"|format(s.total_spent) }}</td>
+            <td class="actions"><a href="/suppliers/{{ s.id }}/view" class="btn btn-sm btn-gray">View</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

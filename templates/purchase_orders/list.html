@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block page_title %}Purchase Orders{% endblock %}
+{% block page_actions %}<a href="/purchase-orders/add" class="btn btn-primary">+ New PO</a>{% endblock %}
+{% block content %}
+<div class="card">
+    <table>
+        <thead><tr><th>PO Number</th><th>Supplier</th><th>Warehouse</th><th>Items</th><th>Total</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+        <tbody>
+            {% for po in purchase_orders %}
+            <tr>
+                <td><b>{{ po.po_number }}</b></td>
+                <td>{{ po.supplier_name or '—' }}</td>
+                <td>{{ po.warehouse_name or '—' }}</td>
+                <td>{{ po.item_count }}</td>
+                <td>{{ currency }}{{ "%.2f"|format(po.total_amount) }}</td>
+                <td><span class="badge badge-{% if po.status=='received' %}green{% elif po.status=='draft' %}gray{% else %}yellow{% endif %}">{{ po.status }}</span></td>
+                <td>{{ po.order_date }}</td>
+                <td class="actions">
+                    <a href="/purchase-orders/{{ po.id }}/edit" class="btn btn-sm btn-gray">Edit</a>
+                    {% if po.status == 'draft' %}
+                    <a href="/purchase-orders/{{ po.id }}/receive" class="btn btn-sm btn-success">Receive</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

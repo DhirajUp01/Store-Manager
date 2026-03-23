@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block page_title %}Scan Result{% endblock %}
+{% block content %}
+<style>
+.result-hero { text-align:center; padding: 3rem 1rem; }
+.result-icon { font-size: 4rem; margin-bottom: 1rem; }
+.result-hero h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+.sku-big { font-size: 1.2rem; font-weight: 700; color: var(--primary); margin-bottom: 1.5rem; display: block; }
+.change-display { font-size: 2.5rem; font-weight: 700; margin: 1.5rem 0; }
+.change-display.down { color: var(--danger); }
+.change-display.up { color: var(--success); }
+.change-display.neutral { color: var(--text); }
+.action-tag { display: inline-block; padding: 0.4rem 1.2rem; border-radius: 20px; font-size: 0.9rem; color: white; margin-bottom: 1rem; }
+.action-tag.sale { background: var(--danger); }
+.action-tag.restock { background: var(--success); }
+.action-tag.adjustment { background: var(--text); }
+.stock-flow { display: flex; justify-content: center; align-items: center; gap: 1rem; font-size: 1.1rem; }
+.stock-flow .arrow { color: var(--muted); font-size: 1.5rem; }
+</style>
+
+<div class="result-hero">
+    <div class="result-icon"></div>
+    <h1>Inventory Updated!</h1>
+    <span class="sku-big">{{ product.sku }} — {{ product.name }}</span>
+    
+    <span class="action-tag {% if action == 'sale' %}sale{% elif action == 'restock' %}restock{% else %}adjustment{% endif %}">
+        {% if action == 'sale' %} Sold{% elif action == 'restock' %} Restocked{% else %} Adjusted{% endif %}
+        × {{ qty }}
+    </span>
+
+    <div class="change-display {% if action == 'sale' %}down{% elif action == 'restock' %}up{% else %}neutral{% endif %}">
+        {{ status_label.split(':')[0] if ':' in status_label else status_label }}
+    </div>
+
+    <div class="stock-flow">
+        {% if action == 'sale' %}
+        <span>Stock decreased by {{ qty }}</span>
+        {% elif action == 'restock' %}
+        <span>Stock increased by {{ qty }}</span>
+        {% else %}
+        <span>Stock adjusted to {{ qty }}</span>
+        {% endif %}
+    </div>
+
+    <div style="margin-top:2rem;display:flex;gap:0.75rem;justify-content:center;">
+        <a href="/scan" class="btn btn-primary">← Scan Another</a>
+        <a href="/products/{{ product.id }}" class="btn btn-gray">View Product</a>
+        <a href="/" class="btn btn-gray">Dashboard</a>
+    </div>
+</div>
+{% endblock %}

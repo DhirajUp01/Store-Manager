@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block page_title %}New Sales Order{% endblock %}
+{% block content %}
+<div class="card" style="max-width:700px;">
+    <form method="POST">
+        <div class="form-grid">
+            <div class="form-group"><label>Customer Name</label><input name="customer_name" class="form-control"></div>
+            <div class="form-group"><label>Phone</label><input name="customer_phone" class="form-control"></div>
+            <div class="form-group"><label>Email</label><input name="customer_email" type="email" class="form-control"></div>
+            <div class="form-group"><label>Warehouse *</label>
+                <select name="warehouse_id" class="form-control" required>
+                    {% for w in warehouses %}<option value="{{ w.id }}">{{ w.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="form-group"><label>Order Date</label><input name="order_date" type="date" class="form-control" value="{{ today }}"></div>
+        </div>
+        <div class="form-group"><label>Address</label><textarea name="customer_address" class="form-control" rows="2"></textarea></div>
+        <div class="form-group"><label>Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
+        <button type="submit" class="btn btn-primary">Create Order →</button>
+    </form>
+</div>
+{% endblock %}

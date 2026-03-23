@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block page_title %}{{ count.count_number }}{% endblock %}
+{% block page_actions %}{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="info-row"><div class="label">Count Number</div><div class="value"><b>{{ count.count_number }}</b></div></div>
+    <div class="info-row"><div class="label">Status</div><div class="value"><span class="badge badge-{% if count.status=='completed' %}green{% else %}yellow{% endif %}">{{ count.status }}</span></div></div>
+    <div class="info-row"><div class="label">Warehouse</div><div class="value">{{ count.warehouse_name }}</div></div>
+</div>
+<div class="card">
+    <div class="card-header"><h2>Count Items</h2></div>
+    {% if count.status != 'completed' %}
+    <form method="POST">
+    {% endif %}
+    <table>
+        <thead><tr><th>SKU</th><th>Product</th><th>System Qty</th><th>Counted Qty</th><th>Variance</th></tr></thead>
+        <tbody>
+            {% for item in items %}
+            <tr class="{% if item.variance and item.variance != 0 %}style="background:#fef9c3"{% endif %}">
+                <td><b>{{ item.sku }}</b></td>
+                <td>{{ item.product_name }}</td>
+                <td>{{ item.system_qty|int }}</td>
+                {% if count.status != 'completed' %}
+                <td><input name="counted_qty" type="number" min="0" value="{{ item.counted_qty|int }}" class="form-control" style="width:80px;"></td>
+                {% else %}
+                <td>{{ item.counted_qty|int }}</td>
+                {% endif %}
+                <td>{% if item.variance %}{{ item.variance }}{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if count.status != 'completed' %}
+    <input type="hidden" name="item_id" value="">
+    <button type="submit" class="btn btn-success" style="margin-top:1rem;"> Submit & Adjust Stock</button>
+    {% endif %}
+    {% if count.status != 'completed' %}</form>{% endif %}
+</div>
+{% endblock %}

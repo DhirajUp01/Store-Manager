@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% block page_title %}Settings{% endblock %}
+{% block content %}
+<div class="two-col">
+    <div>
+        <div class="card">
+            <div class="card-header"><h2>Company</h2></div>
+            <form method="POST">
+                <div class="form-group"><label>Company Name</label><input name="company_name" class="form-control" value="{{ settings.get('company_name', 'Store Manager') }}"></div>
+                <div class="form-group"><label>Address</label><textarea name="address" class="form-control" rows="2">{{ settings.get('address', '') }}</textarea></div>
+                <div class="form-grid">
+                    <div class="form-group"><label>Phone</label><input name="phone" class="form-control" value="{{ settings.get('phone', '') }}"></div>
+                    <div class="form-group"><label>Email</label><input name="email" class="form-control" value="{{ settings.get('email', '') }}"></div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group"><label>Tax Number (GSTIN)</label><input name="tax_number" class="form-control" value="{{ settings.get('tax_number', '') }}"></div>
+                    <div class="form-group"><label>Currency Symbol</label><input name="currency_symbol" class="form-control" value="{{ settings.get('currency_symbol', 'Rs.') }}"></div>
+                </div>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h2>GS1 Barcode Settings</h2></div>
+            <div style="background:#eff6ff;border:1px solid #bfdbfe;padding:1rem;border-radius:6px;margin-bottom:1rem;font-size:.85rem;">
+                <b>GS1 Prefix:</b> Identifies your company in barcodes. India's prefix is <b>890</b>.<br>
+                GS1-128 and GS1 QR codes use this to generate valid GTINs for Amazon, Flipkart, and retail stores.
+            </div>
+            <form method="POST">
+                <div class="form-grid">
+                    <div class="form-group"><label>GS1 Company Prefix (3 digits)</label>
+                        <input name="gs1_prefix" class="form-control" value="{{ settings.get('gs1_prefix', '890') }}" maxlength="3" pattern="[0-9]{3}" required></div>
+                    <div class="form-group"><label>Default Barcode Format</label>
+                        <select name="barcode_format_default" class="form-control">
+                            <option value="GS1-128" {% if settings.get('barcode_format_default')=='GS1-128' %}selected{% endif %}>GS1-128</option>
+                            <option value="QR" {% if settings.get('barcode_format_default')=='QR' %}selected{% endif %}>QR (GS1)</option>
+                            <option value="EAN-13" {% if settings.get('barcode_format_default')=='EAN-13' %}selected{% endif %}>EAN-13</option>
+                            <option value="CODE-128" {% if settings.get('barcode_format_default')=='CODE-128' %}selected{% endif %}>CODE-128</option>
+                            <option value="CODE-39" {% if settings.get('barcode_format_default')=='CODE-39' %}selected{% endif %}>CODE-39</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h2>Email Setup</h2></div>
+
+            <!-- Provider selector -->
+            <form method="POST" id="emailSettingsForm">
+                <input type="hidden" name="low_stock_email_enabled" value="0">
+                <div style="margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
+                    <input type="checkbox" name="low_stock_email_enabled" id="lsEnabled" value="1"
+                        {% if settings.get('low_stock_email_enabled')=='1' %}checked{% endif %}
+                        onchange="document.getElementById('emailSection').style.display = this.checked ? '' : 'none'">
+                    <label for="lsEnabled" style="cursor:pointer; font-weight:600;">Enable email alerts</label>
+                </div>
+
+                <div id="emailSection" style="{% if settings.get('low_stock_email_enabled') != '1' %}display:none;{% endif %}">
+
+                    <div class="form-group">
+                        <label>Email Provider</label>
+                        <select name="email_provider" id="emailProvider" class="form-control" onchange="toggleEmailFields()">
+                            <option value="brevo" {% if settings.get('email_provider')=='brevo' %}selected{% endif %}>Brevo (Sendinblue) — Recommended</option>
+                            <option value="gmail" {% if settings.get('email_provider')=='gmail' %}selected{% endif %}>Gmail (App Password)</option>
+                            <option value="smtp" {% if settings.get('email_provider')=='smtp' %}selected{% endif %}>Custom SMTP</option>
+                        </select>
+                    </div>
+
+                    <!-- Brevo fields -->
+                    <div id="brevoFields">
+                        <div style="background:#f0fdf4;border:1px solid #86efac;padding:1rem;border-radius:6px;margin-bottom:1rem;font-size:.85rem;">
+                            <b>Brevo (Sendinblue) is recommended.</b> Free 300 emails/day, forever. No credit card needed.<br>
+                            1. Sign up at <a href="https://app.brevo.com" target="_blank">app.brevo.com</a> (free)<br>
+                            2. Go to <b>SMTP</b> &rarr; <b>Create API Key</b> &rarr; copy the key<br>
+                            3. Paste it below and set your <b>Sender Email</b>
+                        </div>
+                        <div class="form-group">
+                            <label>Brevo SMTP API Key</label>
+                            <input type="password" name="email_brevo_key" class="form-control" value="{{ settings.get('email_brevo_key', '') }}" placeholder="xkeysib-xxxxxxxxxxxx">
+                        </div>
+                    </div>
+
+                    <!-- Gmail fields -->
+                    <div id="gmailFields" style="display:none;">
+                        <div style="background:#fff7ed;border:1px solid #fed7aa;padding:1rem;border-radius:6px;margin-bottom:1rem;font-size:.85rem;">
+                            <b>Gmail requires an App Password.</b><br>
+                            1. Enable 2FA on your Google account<br>
+                            2. Go to <b>Google Account</b> &rarr; <b>Security</b> &rarr; <b>App passwords</b><br>
+                            3. Generate a password for "Mail" and paste below
+                        </div>
+                        <div class="form-group"><label>Gmail Address</label><input type="email" name="email_from" class="form-control" value="{{ settings.get('email_from', '') }}" placeholder="your@gmail.com"></div>
+                        <div class="form-group"><label>Gmail App Password</label><input type="password" name="email_smtp_password" class="form-control" value="{{ settings.get('email_smtp_password', '') }}" placeholder="xxxx xxxx xxxx xxxx"></div>
+                    </div>
+
+                    <!-- Custom SMTP fields -->
+                    <div id="smtpFields" style="display:none;">
+                        <div class="form-group"><label>SMTP Host</label><input name="email_smtp_host" class="form-control" value="{{ settings.get('email_smtp_host', '') }}" placeholder="smtp.example.com"></div>
+                        <div class="form-grid">
+                            <div class="form-group"><label>Port</label><input name="email_smtp_port" class="form-control" value="{{ settings.get('email_smtp_port', '587') }}" placeholder="587"></div>
+                            <div class="form-group">
+                                <label>Use TLS</label>
+                                <select name="email_use_tls" class="form-control">
+                                    <option value="1" {% if settings.get('email_use_tls')!='0' %}selected{% endif %}>Yes (TLS)</option>
+                                    <option value="0" {% if settings.get('email_use_tls')=='0' %}selected{% endif %}>No</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>SMTP Username</label><input name="email_smtp_username" class="form-control" value="{{ settings.get('email_smtp_username', '') }}"></div>
+                        <div class="form-group"><label>SMTP Password</label><input type="password" name="email_smtp_password" class="form-control" value="{{ settings.get('email_smtp_password', '') }}"></div>
+                    </div>
+
+                    <!-- Common fields -->
+                    <div class="form-group"><label>Sender / From Email</label><input type="email" name="email_from" class="form-control" value="{{ settings.get('email_from', '') }}" placeholder="noreply@yourcompany.com"></div>
+                    <div class="form-group"><label>Alert Recipient Email (receives low stock alerts)</label><input type="email" name="email_to" class="form-control" value="{{ settings.get('email_to', '') }}" placeholder="you@yourcompany.com"></div>
+
+                    <div style="display:flex; gap:0.5rem; align-items:center; margin-top:1rem;">
+                        <button type="submit" class="btn btn-primary">Save Email Settings</button>
+                        <button type="button" class="btn btn-success" onclick="testEmail()">Test Email</button>
+                        <span id="emailTestResult" style="font-size:.85rem;"></span>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div>
+        <div class="card">
+            <div class="card-header"><h2>Units of Measure</h2></div>
+            <table style="font-size:.85rem;">
+                <tr><th>Name</th><th>Code</th><th>Decimal</th></tr>
+                {% for u in units %}
+                <tr><td>{{ u.name }}</td><td><code>{{ u.code }}</code></td><td>{{ 'Yes' if u.is_decimal else 'No' }}</td></tr>
+                {% endfor %}
+            </table>
+            <form method="POST" action="/settings/units/add" style="margin-top:.75rem;">
+                <div style="display:flex;gap:.5rem; flex-wrap:wrap;">
+                    <input name="name" class="form-control" placeholder="Name" style="flex:1;min-width:100px;" required>
+                    <input name="code" class="form-control" placeholder="Code" style="width:70px;" required>
+                    <label style="display:flex;align-items:center;gap:.3rem;font-size:.85rem;cursor:pointer;white-space:nowrap;">
+                        <input name="is_decimal" type="checkbox" value="1"> Decimal
+                    </label>
+                    <button type="submit" class="btn btn-sm btn-primary">+</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h2>Categories</h2></div>
+            {% for c in categories %}
+            <span class="badge badge-blue" style="margin:.25rem;display:inline-block;">{{ c.name }}</span>
+            {% endfor %}
+            <form method="POST" action="/settings/categories/add" style="margin-top:.75rem;">
+                <div style="display:flex;gap:.5rem; flex-wrap:wrap;">
+                    <input name="name" class="form-control" placeholder="New category name" style="flex:1;" required>
+                    <input name="description" class="form-control" placeholder="Description" style="flex:1;">
+                    <button type="submit" class="btn btn-sm btn-primary">+</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h2>System</h2></div>
+            <div class="info-row"><span class="label">Database</span><span class="value">tpims.db (SQLite)</span></div>
+            <div class="info-row"><span class="label">GS1 Mode</span><span class="value">Enabled</span></div>
+            <div class="info-row"><span class="label">Low Stock Cron</span><span class="value" style="font-size:.78rem;">/api/check-low-stock-email</span></div>
+            <div class="info-row"><span class="label">Product Lookup</span><span class="value">/api/lookup?q=SKU</span></div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleEmailFields() {
+    var provider = document.getElementById('emailProvider').value;
+    document.getElementById('brevoFields').style.display = provider === 'brevo' ? '' : 'none';
+    document.getElementById('gmailFields').style.display = provider === 'gmail' ? '' : 'none';
+    document.getElementById('smtpFields').style.display = provider === 'smtp' ? '' : 'none';
+}
+window.addEventListener('DOMContentLoaded', toggleEmailFields);
+
+async function testEmail() {
+    var btn = document.querySelector('.btn-success');
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    var result = document.getElementById('emailTestResult');
+    result.textContent = '';
+    try {
+        var resp = await fetch('/api/email/test', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({})
+        });
+        var data = await resp.json();
+        if (data.status === 'ok') {
+            result.style.color = '#16a34a';
+            result.textContent = 'Test email sent!';
+        } else {
+            result.style.color = '#dc2626';
+            result.textContent = 'Error: ' + data.message;
+        }
+    } catch(e) {
+        result.style.color = '#dc2626';
+        result.textContent = 'Error: ' + e.message;
+    }
+    btn.disabled = false;
+    btn.textContent = 'Test Email';
+}
+</script>
+{% endblock %}

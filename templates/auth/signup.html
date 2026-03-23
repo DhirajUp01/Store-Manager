@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Store Manager</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f1f5f9;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .signup-box {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .brand {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .brand h1 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        .brand span {
+            color: #2563eb;
+        }
+        .brand p {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 0.3rem;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.3rem;
+            font-weight: 500;
+            font-size: 0.85rem;
+            color: #1e293b;
+        }
+        .form-control {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            background: white;
+            color: #1e293b;
+            transition: border-color 0.15s;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+        }
+        .form-hint {
+            font-size: 0.78rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            padding: 0.65rem 1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: inherit;
+            width: 100%;
+            font-weight: 600;
+        }
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+        .flash {
+            padding: 0.7rem 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            font-size: 0.88rem;
+        }
+        .flash-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+        .footer-links {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.88rem;
+            color: #64748b;
+        }
+        .footer-links a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+<div class="signup-box">
+    <div class="brand">
+        <h1><span>Store</span> Manager</h1>
+        <p>Create your account</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+    <div class="flash flash-{{ cat }}">{{ msg }}</div>
+    {% endfor %}
+    {% endwith %}
+
+    <form method="POST" action="/auth/signup">
+        <div class="form-group">
+            <label for="company_name">Company / Store Name</label>
+            <input type="text" id="company_name" name="company_name" class="form-control"
+                   placeholder="My Store" value="{{ request.form.get('company_name', '') }}" required>
+        </div>
+        <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" name="email" class="form-control"
+                   placeholder="you@example.com" value="{{ request.form.get('email', '') }}" required autofocus>
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" class="form-control"
+                   placeholder="At least 6 characters" required>
+        </div>
+        <div class="form-group">
+            <label for="confirm_password">Confirm Password</label>
+            <input type="password" id="confirm_password" name="confirm_password" class="form-control"
+                   placeholder="Repeat your password" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Create Account</button>
+    </form>
+
+    <div class="footer-links">
+        Already have an account? <a href="/auth/login">Sign in</a>
+    </div>
+</div>
+</body>
+</html>
