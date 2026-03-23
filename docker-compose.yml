@@ -4,7 +4,7 @@ services:
   app:
     build: .
     ports:
-      - "5050:5050"
+      - "${PORT:-5050}:${PORT:-5050}"
     environment:
       - FLASK_APP=app.py
       - FLASK_ENV=production
@@ -12,6 +12,7 @@ services:
       - DATABASE=tpims.db
       - OLLAMA_BASE_URL=http://ollama:11434
       - OLLAMA_MODEL=llama3
+      - PORT=5050
     volumes:
       - ./tpims.db:/app/tpims.db
       - ./static/barcodes:/app/static/barcodes
@@ -27,8 +28,6 @@ services:
     volumes:
       - ollama_data:/root/.ollama
     restart: unless-stopped
-    # Uncomment and edit to pre-pull a model:
-    # entrypoint: /bin/bash -c "ollama pull llama3 && exec /bin/ollama serve"
 
 volumes:
   ollama_data:

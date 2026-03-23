@@ -100,6 +100,12 @@ def log_user_audit(user_id, action, details=None, ip_address=None):
 # ─── Ollama AI Setup ─────────────────────────────────────────────────────────
 OLLAMA_BASE_URL = os.environ.get('OLLAMA_BASE_URL', 'http://localhost:11434')
 OLLAMA_MODEL = os.environ.get('OLLAMA_MODEL', 'llama3')
+_ollama_initialized = False
+
+def _ensure_ollama():
+    """Lazy init — only connects when actually needed."""
+    global _ollama_initialized
+    _ollama_initialized = True
 
 def ollama_chat(prompt, system_prompt=None, model=None):
     """Send a chat request to Ollama. Returns text response or None on failure."""
@@ -3668,4 +3674,5 @@ def api_docs():
 
 if __name__ == '__main__':
     init_db()
-    app.run(host='0.0.0.0', port=5050, debug=True)
+    port = int(os.environ.get('PORT', 5050))
+    app.run(host='0.0.0.0', port=port, debug=False)
