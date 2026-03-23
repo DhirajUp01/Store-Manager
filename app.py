@@ -15,6 +15,7 @@ from flask import (
     Flask, render_template, request, redirect, url_for,
     send_file, jsonify, flash, session
 )
+from flask_cors import CORS
 from barcode import generate as bc_generate
 from barcode.writer import ImageWriter
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -24,6 +25,7 @@ import qrcode
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'store-manager-' + str(uuid.uuid4()))
+CORS(app)  # Allow frontend (Netlify) to call this API
 app.config['DATABASE'] = os.path.join(os.path.dirname(__file__), 'tpims.db')
 app.config['BARCODES'] = os.path.join(os.path.dirname(__file__), 'static', 'barcodes')
 app.config['EXPORTS']  = os.path.join(os.path.dirname(__file__), 'exports')
@@ -3676,3 +3678,182 @@ if __name__ == '__main__':
     init_db()
     port = int(os.environ.get('PORT', 5050))
     app.run(host='0.0.0.0', port=port, debug=False)
+
+
+# ─── JSON API Endpoints (for static frontend) ─────────────────────────────────
+
+@app.route('/api/dashboard-stats')
+def api_dashboard_stats():
+    """Return dashboard stats as JSON for the static frontend."""
+    conn = get_db()
+    uid_val = uid()
+    params = [uid_val] if uid_val != 0 else []
+    products_filter = 'is_active=1 AND (user_id=0 OR user_id=?)' if uid_val != 0 else 'is_active=1'
+    inv_filter = ' AND (p.user_id=0 OR p.user_id=?)' if uid_val != 0 else ''
+
+    stats = {
+        'total_products': conn.execute(f'SELECT COUNT(*) FROM products WHERE {products_filter}', params).fetchone()[0],
+        'total_warehouses': conn.execute('SELECT COUNT(*) FROM warehouses WHERE is_active=1').fetchone()[0],
+        'total_suppliers': conn.execute(f'SELECT COUNT(*) FROM suppliers WHERE is_active=1 {inv_filter.replace("p.user_id", "suppliers.user_id")}', params if uid_val != 0 else []).fetchone()[0],
+        'total_stock_value': conn.execute(f'''
+            SELECT COALESCE(SUM(i.available_qty * p.cost_price), 0)
+            FROM inventory i JOIN products p ON p.id=i.product_id WHERE p.is_active=1 {inv_filter}
+        ''', params + params if uid_val != 0 else []).fetchone()[0],
+        'low_stock_count': conn.execute(f'''
+            SELECT COUNT(*) FROM products p LEFT JOIN inventory i ON i.product_id=p.id
+            WHERE p.is_active=1 {inv_filter.replace("p.user_id", "p.user_id")}
+            GROUP BY p.id HAVING COALESCE(SUM(i.available_qty), 0) <= p.reorder_point
+        ''', params).fetchone() or [0],
+        'pending_orders': conn.execute("SELECT COUNT(*) FROM sales_orders WHERE status='pending'").fetchone()[0],
+        'total_invoices': conn.execute('SELECT COUNT(*) FROM invoices').fetchone()[0],
+        'unpaid_invoices': conn.execute("SELECT COUNT(*) FROM invoices WHERE payment_status='unpaid'").fetchone()[0],
+    }
+    conn.close()
+    return jsonify(stats)
+
+
+@app.route('/api/low-stock')
+def api_low_stock():
+    """Return low-stock products as JSON."""
+    conn = get_db()
+    rows = conn.execute('''
+        SELECT p.sku, p.name, p.reorder_point,
+               COALESCE(SUM(i.available_qty), 0) as total_stock
+        FROM products p LEFT JOIN inventory i ON i.product_id=p.id
+        WHERE p.is_active=1
+        GROUP BY p.id HAVING total_stock <= p.reorder_point
+        LIMIT 20
+    ''').fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+
+@app.route('/api/recent-moves')
+def api_recent_moves():
+    """Return recent stock movements as JSON."""
+    conn = get_db()
+    rows = conn.execute('''
+        SELECT sm.*, p.name as product_name, p.sku, w.name as warehouse_name
+        FROM stock_moves sm
+        JOIN products p ON p.id=sm.product_id
+        JOIN warehouses w ON w.id=sm.warehouse_id
+        ORDER BY sm.created_at DESC LIMIT 10
+    ''').fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+
+@app.route('/api/recent-orders')
+def api_recent_orders():
+    """Return recent sales orders as JSON."""
+    conn = get_db()
+    rows = conn.execute('''
+        SELECT so.*, COUNT(soi.id) as item_count
+        FROM sales_orders so
+        LEFT JOIN sales_order_items soi ON soi.so_id=so.id
+        GROUP BY so.id ORDER BY so.created_at DESC LIMIT 8
+    ''').fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+
+@app.route('/api/products')
+def api_products():
+    """Return all products as JSON."""
+    conn = get_db()
+    rows = conn.execute('''
+        SELECT p.*, COALESCE(SUM(i.available_qty), 0) as total_stock
+        FROM products p LEFT JOIN inventory i ON i.product_id=p.id
+        WHERE p.is_active=1
+        GROUP BY p.id ORDER BY p.name
+    ''').fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+
+@app.route('/api/pos/sale', methods=['POST'])
+def api_pos_sale():
+    """Process a POS sale from the static frontend."""
+    data = request.get_json()
+    items = data.get('items', [])
+    if not items:
+        return jsonify({'error': 'No items'}), 400
+
+    conn = get_db()
+    errors = []
+    for item in items:
+        sku = item.get('sku')
+        qty = float(item.get('qty', 1))
+        # Find product
+        prod = conn.execute('SELECT id, name FROM products WHERE sku=?', (sku,)).fetchone()
+        if not prod:
+            errors.append(f'SKU {sku} not found')
+            continue
+        # Deduct stock
+        conn.execute('''
+            UPDATE inventory SET available_qty = available_qty - ?
+            WHERE product_id=? AND warehouse_id=1
+        ''', (qty, prod['id']))
+        conn.execute('''
+            INSERT INTO stock_moves (product_id, warehouse_id, move_type, qty_change, notes, created_by)
+            VALUES (?, 1, 'sale', ?, 'POS sale', 'POS')
+        ''', (prod['id'], -qty))
+
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True, 'errors': errors})
+
+
+@app.route('/api/sales-summary')
+def api_sales_summary():
+    """Return sales summary as JSON."""
+    conn = get_db()
+    rows = conn.execute('''
+        SELECT DATE(created_at) as date, COUNT(*) as orders,
+               SUM(total_amount) as total
+        FROM sales_orders
+        WHERE created_at >= DATE('now', '-30 days')
+        GROUP BY DATE(created_at) ORDER BY date
+    ''').fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+
+@app.route('/api/lookup')
+def api_lookup():
+    """Look up a product by SKU or barcode."""
+    code = request.args.get('sku', '').strip()
+    conn = get_db()
+    # Try exact SKU match
+    product = conn.execute('''
+        SELECT p.*, COALESCE(SUM(i.available_qty), 0) as total_stock
+        FROM products p LEFT JOIN inventory i ON i.product_id=p.id
+        WHERE p.sku=? OR p.custom_barcode=? OR p.gtin=?
+        GROUP BY p.id
+    ''', (code, code, code)).fetchone()
+
+    # If no match, try barcode lookup
+    if not product:
+        barcode_row = conn.execute('''
+            SELECT pb.product_id FROM product_barcodes pb WHERE pb.barcode=?
+        ''', (code,)).fetchone()
+        if barcode_row:
+            product = conn.execute('''
+                SELECT p.*, COALESCE(SUM(i.available_qty), 0) as total_stock
+                FROM products p LEFT JOIN inventory i ON i.product_id=p.id
+                WHERE p.id=? GROUP BY p.id
+            ''', (barcode_row['product_id'],)).fetchone()
+
+    conn.close()
+    if product:
+        return jsonify(dict(product))
+    return jsonify({'error': 'Product not found'}), 404
+
+
+@app.route('/auth/me')
+def auth_me():
+    """Return current user info."""
+    if current_user.is_authenticated:
+        return jsonify({'id': current_user.id, 'email': current_user.email,
+                        'company_name': current_user.company_name})
+    return jsonify({'error': 'Not authenticated'}), 401
