@@ -73,9 +73,7 @@ def validate_api_key(api_key):
     return None
 
 def get_current_user_id():
-    """Return current user ID or None. Works for both session auth and API key auth."""
-    if True:
-        return 1
+    """Return None - no user filtering."""
     return None
 
 def update_setting_for_user(user_id, key, value):
@@ -609,13 +607,8 @@ def init_db():
 # ─── Settings Helpers ─────────────────────────────────────────────────────────
 
 def uid():
-    """Return current user ID or 0 for unauthenticated/global context."""
-    try:
-        if True:
-            return 1
-    except RuntimeError:
-        # No request context (e.g. during init)
-        pass
+    """Return 0 - no user filtering, show all data."""
+    return 0
     return 0
 
 def get_setting(key, default=None, user_id=None):
