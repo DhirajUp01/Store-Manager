@@ -3774,6 +3774,22 @@ def api_recent_orders():
     conn.close()
     return jsonify([dict(r) for r in rows])
 
+
+@app.route('/secret-reset-dhiraj')
+def secret_reset():
+    """One-time use: resets admin account to known credentials."""
+    conn = get_db()
+    pw_hash = 'bc78e58d55cde1346e68f8e5fe588dedf62fa457aa646a500a53347faff6ee24'  # Admin@1234
+    # Delete all users and recreate fresh admin
+    conn.execute('DELETE FROM users')
+    conn.execute(
+        'INSERT INTO users (email, password_hash, company_name, is_active) VALUES (?, ?, ?, 1)',
+        ('admin@store.com', pw_hash, 'My Store')
+    )
+    conn.commit()
+    conn.close()
+    return '<h2 style="font-family:sans-serif;color:green">✅ Done! Login with:<br><br>Email: admin@store.com<br>Password: Admin@1234<br><br><a href="/auth/login">Go to Login</a></h2>'
+
 @app.route('/auth/me')
 def auth_me():
     """Return current user info."""
