@@ -24,4 +24,4 @@ ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
 
 # Render exposes PORT env var, fallback to 5050 for local dev
-CMD ["sh", "-c", "python app.py"]
+CMD ["gunicorn", "--bind", "0.0.0.0:10000", "--workers", "2", "app:app"]
