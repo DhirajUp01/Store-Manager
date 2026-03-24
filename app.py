@@ -858,7 +858,8 @@ def generate_barcode_image(product, fmt=None):
     fmt = fmt or product.get('barcode_format', 'GS1-128')
 
     if fmt == 'QR':
-        return generate_qr_gs1(product)
+        img_bytes, data = generate_qr_gs1(product)
+        return img_bytes, data, 'QR'
 
     # For GS1-128 / CODE-128 / CODE-39 / EAN-13 / EAN-8 / UPC
     if fmt == 'GS1-128':
