@@ -602,6 +602,16 @@ def init_db():
         pass
     # END AUTO-RESET
 
+
+    # Seed default warehouse if none exist
+    try:
+        wh_count = conn.execute('SELECT COUNT(*) FROM warehouses').fetchone()[0]
+        if wh_count == 0:
+            conn.execute("INSERT INTO warehouses (name, code, is_active) VALUES ('Main Warehouse', 'MAIN', 1)")
+            conn.commit()
+    except Exception:
+        pass
+
     # Seed default categories if none exist
     try:
         cat_count = conn.execute('SELECT COUNT(*) FROM categories').fetchone()[0]
@@ -3304,7 +3314,7 @@ def api_check_low_stock_email():
 @app.route('/api/lookup')
 def api_lookup():
     """Universal product lookup by SKU, barcode, or GS1 data."""
-    identifier = request.args.get('q', '').strip()
+    identifier = (request.args.get('q') or request.args.get('sku') or '').strip()
     if not identifier:
         return jsonify({'found': False, 'error': 'No identifier provided'}), 400
 
@@ -3739,11 +3749,13 @@ def api_dashboard_stats():
             SELECT COALESCE(SUM(i.available_qty * p.cost_price), 0)
             FROM inventory i JOIN products p ON p.id=i.product_id WHERE p.is_active=1 {inv_filter}
         ''', params + params if uid_val != 0 else []).fetchone()[0],
-        'low_stock_count': conn.execute(f'''
-            SELECT COUNT(*) FROM products p LEFT JOIN inventory i ON i.product_id=p.id
-            WHERE p.is_active=1 {inv_filter.replace("p.user_id", "p.user_id")}
-            GROUP BY p.id HAVING COALESCE(SUM(i.available_qty), 0) <= p.reorder_point
-        ''', params).fetchone() or [0],
+        'low_stock_count': conn.execute('''
+            SELECT COUNT(*) FROM (
+                SELECT p.id FROM products p LEFT JOIN inventory i ON i.product_id=p.id
+                WHERE p.is_active=1
+                GROUP BY p.id HAVING COALESCE(SUM(i.available_qty), 0) <= p.reorder_point
+            )
+        ''').fetchone()[0],
         'pending_orders': conn.execute("SELECT COUNT(*) FROM sales_orders WHERE status='pending'").fetchone()[0],
         'total_invoices': conn.execute('SELECT COUNT(*) FROM invoices').fetchone()[0],
         'unpaid_invoices': conn.execute("SELECT COUNT(*) FROM invoices WHERE payment_status='unpaid'").fetchone()[0],
