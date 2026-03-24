@@ -601,6 +601,24 @@ def init_db():
     except Exception:
         pass
     # END AUTO-RESET
+
+    # Seed default categories if none exist
+    try:
+        cat_count = conn.execute('SELECT COUNT(*) FROM categories').fetchone()[0]
+        if cat_count == 0:
+            default_cats = [
+                'General', 'Electronics', 'Clothing', 'Food & Beverages',
+                'Health & Beauty', 'Home & Garden', 'Sports & Outdoors',
+                'Toys & Games', 'Automotive', 'Books & Stationery',
+                'Pet Supplies', 'Tools & Hardware', 'Office Supplies', 'Other'
+            ]
+            for cat in default_cats:
+                conn.execute('INSERT OR IGNORE INTO categories (name) VALUES (?)', (cat,))
+            conn.commit()
+    except Exception:
+        pass
+    # End seed categories
+
     conn.close()
 
 
